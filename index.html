@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MedHelp — Secure Patient Records & Appointments</title>
+    <meta name="description" content="MedHelp: appointments, prescriptions and patient records in one secure portal for doctors and patients." />
+    <meta name="author" content="MedHelp" />
+    <meta name="theme-color" content="#171717" />
+
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="canonical" href="https://anew-coding.lovable.app/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MedHelp" />
+    <meta property="og:url" content="https://anew-coding.lovable.app/" />
+    <meta property="og:title" content="MedHelp — Secure Patient Records & Appointments" />
+    <meta property="og:description" content="Appointments, prescriptions and patient records in one secure portal for doctors and patients." />
+    <meta property="og:image" content="https://anew-coding.lovable.app/favicon.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MedHelp — Secure Patient Records & Appointments" />
+    <meta name="twitter:description" content="Appointments, prescriptions and patient records in one secure portal for doctors and patients." />
+    <meta name="twitter:image" content="https://anew-coding.lovable.app/favicon.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "MedHelp",
+        "url": "https://anew-coding.lovable.app/",
+        "logo": "https://anew-coding.lovable.app/favicon.png"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "MedHelp",
+        "url": "https://anew-coding.lovable.app/"
+      }
+    </script>
+
+    <script>
+      (function(){try{
+        var raw=localStorage.getItem("drmabari-theme");
+        var s=raw?JSON.parse(raw):{};
+        var mode=s.mode||"system";
+        var accent=s.accent||"slate";
+        var gradient=s.gradient||"aurora";
+        var scale=s.fontScale||"md";
+        var sysDark=window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var dark=mode==="dark"||(mode==="system"&&sysDark);
+        var r=document.documentElement;
+        if(dark)r.classList.add("dark");else r.classList.remove("dark");
+        r.dataset.accent=accent;
+        r.dataset.gradient=gradient;
+        r.dataset.fontScale=scale;
+      }catch(e){}})();
+    </script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
