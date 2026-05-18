@@ -1,77 +1,158 @@
-# Patient app overhaul — phased plan
+# MedHelp — Comprehensive Update Plan
 
-This touches ~10 areas. I'll execute in phases so each one is verifiable.
-
-## Phase 1 — Foundations (DB + shared utils)
-
-1. **Status lifecycle migration** — add two new appointment statuses:
-   `pending → confirmed → in_call → awaiting_prescription → completed`
-   - No CHECK constraint (status is plain text); just update labels/colors in code.
-   - Add automation: when doctor opens the call, status flips to `in_call`; when call ends, flips to `awaiting_prescription`; when a prescription row is inserted for that appointment's patient on/after that date, flips to `completed`.
-2. **Timezone helper** `src/lib/timezone.ts` — Asia/Dhaka default, respects device tz for display.
-   - All `new Date(date+"T00:00:00")` calls in dashboards switch to this helper so 9:00 PM means 9 PM Dhaka regardless of viewer.
-3. **Patient avatar** — `patients.avatar_url` column already exists. Storage bucket `avatars` is public. Add RLS for patients to upload `${user_id}/...`.
-
-## Phase 2 — Patient Settings page (new)
-
-Create `src/pages/PatientSettingsPage.tsx` (currently patients have no dedicated settings file — settings is inline in PatientDashboard). It will include:
-- Profile picture uploader (camera + crop preview, 5MB max → `avatars/${userId}/avatar.{ext}`)
-- Modern DOB picker — shadcn `Calendar` inside `Popover` with month/year dropdown navigation
-- Collapsed-by-default **Appearance** section (mirrors doctor SettingsPage pattern)
-- Sign Out at bottom
-
-## Phase 3 — Theme system
-
-- Add 5 more accents: `amber`, `teal`, `sky`, `pink`, `lime` (total 10).
-- Bump gradient opacity from ~0.25 to ~0.55 in `src/index.css` `[data-gradient]` selectors.
-- Patient settings + doctor settings show the new accents.
-
-## Phase 4 — Patient Dashboard
-
-- **Hub back behavior**: when on a Hub sub-tab (visits/files/account/settings), tapping `Hub` returns to the `more` grid, not stays.
-- **Profile tabs interactive**: the Upcoming/Visits/Rx summary chips on profile page become buttons that switch to the corresponding tab.
-- **Profile page redesign (Health snapshot focused)**:
-  - Greeting + avatar + next appointment hero (with Join Now CTA when in window)
-  - Vitals strip (height, weight, BMI auto-calc, age)
-  - Allergies & conditions chips
-  - Recent prescriptions (3) + recent reports (3) cards linking to their tabs
-  - Quick actions: Book Appointment, Upload Report, Join Call
-  - Removes Chief Complaint field (was non-persistent) and other stale fields per user request
-- **Desktop sliding tab indicator**: patient sidebar gets the same `motion.div` sliding indicator the doctor uses.
-- **Files tab**: remove Share button.
-
-## Phase 5 — Video calling
-
-- **Pre-join waiting room**: show local camera preview + mic toggle + "Join Call" button before connecting to room. Uses LiveKit `PreJoin` component.
-- **Notification → join**: clicking the appointment-ready browser notification opens the call modal directly (not just the appointments tab). Implemented via a new custom event `app:open-call` carrying the appointmentId.
-- **Notification settings card** in Settings: "Appointment reminders", "Call ready", master enable toggle persisted to localStorage.
-- **Audio UX**: device picker exposed via LiveKit `ControlBar`, plus an unmute hint when joining muted.
-- **Status hooks**: opening modal triggers `in_call`, `onDisconnected` triggers `awaiting_prescription`.
-- Server function `livekit-token` already enforces 30-min window — no change.
-
-## Phase 6 — Toaster
-
-`src/components/ui/sonner.tsx`:
-- Spring-based entrance animation (scale + slide-down)
-- Larger touch target on mobile, better contrast, success/error colored left bar
-- Action button styled to match accent
-- Auto-dismiss 4s, swipe-to-dismiss kept
+এই plan-এ আপনার সব request গুলো গুছিয়ে implement করার roadmap দেওয়া হলো। কাজগুলো logical group-এ ভাগ করা হয়েছে যাতে review এবং test করা সহজ হয়।
 
 ---
 
-## Technical notes (for me, not the user)
+## 1. Branding: New Logo + Favicon Fix
 
-- Asia/Dhaka conversion: format strings via `formatInTimeZone` from `date-fns-tz`. Need `bun add date-fns-tz`.
-- Avatar storage policy uses `(storage.foldername(name))[1] = auth.uid()::text`.
-- LiveKit `PreJoin` ships in `@livekit/components-react`; gated behind a `joined` state in `VideoCallModal`.
-- Status automation lives client-side for now (patient + doctor write status on call open/close); a future DB trigger could replace it.
-- Hub back: in `MobileBottomTabs` click handler, when active key is already `more` keep current; when on a Hub sub-tab and `more` is clicked, route to `more`.
-- Desktop sliding indicator: lift the existing pattern from `DashboardPage`/sidebar nav into the patient sidebar.
+**নতুন logo design (AI-generated, premium quality)**
+- MedHelp-এর জন্য একটা minimal, modern medical logo বানাবো — soft gradient (teal → blue), একটা subtle "heartbeat + plus" mark, rounded square container। App-এর dark/light উভয় theme-এ মানাবে।
+- `src/assets/medhelp-logo.png` এবং `src/assets/medhelp-mark.png` replace করবো।
 
-## Out of scope (will not touch unless you say so)
+**Favicon properly setup**
+- Generate করবো: `public/favicon.ico`, `favicon.png`, `favicon-32.png`, `favicon-192.png`, `favicon-512.png`, `apple-touch-icon.png` (180×180) — সব rounded mark থেকে।
+- `index.html`-এ proper `<link rel="icon">`, `apple-touch-icon`, `mask-icon`, theme-color tags যোগ করবো।
+- `public/manifest.json`-এ icon paths এবং sizes update করবো।
 
-- Full WhatsApp-grade in-call chat / reactions
-- Push notifications via service worker (browser Notification API only)
-- Migrating Edge function logic into TanStack server functions (this project still mixes both)
+**Top bar থেকে logo সরানো**
+- `src/pages/Index.tsx` (Doctor) এবং `src/pages/PatientDashboard.tsx` — দু'জায়গাতেই top bar/sidebar header থেকে `<img src="/favicon.png" .../>` সরাবো। শুধু "MedHelp" title থাকবে।
+- Patient dashboard-এ "DASHBOARD" uppercase subtitle এবং patient name remove — শুধু "MedHelp" থাকবে।
 
-If this plan looks right, approve it and I'll execute Phase 1 → Phase 6 in order with verification after each phase.
+---
+
+## 2. Appointment & Video Session Flow (full rewrite)
+
+**Database changes** (একটা migration):
+- `appointments` table-এ নতুন column: `session_ended_at` (timestamptz), `session_ended_by` (text), `meeting_quality` (text: 'completed' | 'short' | null), `doctor_joined_at`, `patient_joined_at`, `doctor_left_at`, `patient_left_at` (timestamptz).
+- নতুন status values support: `pending`, `confirmed`, `reminder_sent`, `ready_to_join`, `in_call`, `completed`, `ended_early`, `auto_expired`, `cancelled`, `rejected`.
+
+**Session window logic** (`src/lib/appointmentWindow.ts` rewrite):
+- `getSessionWindow(appointment)` → returns `{ joinOpensAt, joinClosesAt (start+30min), reminderAt (start-10min), isJoinable, isReminderTime, isExpired, sessionEnded }`।
+- Join button visible ONLY when: `now >= joinOpensAt && now < joinClosesAt && !sessionEnded`।
+- Auto-expire: `now >= joinClosesAt` হলেই UI থেকে সব button/card hide।
+
+**Notifications** (10-min reminder):
+- নতুন edge function `appointment-reminders` যা প্রতি মিনিটে cron দিয়ে run হবে (pg_cron + pg_net)। 
+- 9:50 PM সময় হলে doctor + patient উভয়কে notification পাঠাবে (existing `notifications.ts` + native push channel)।
+- Doctor-এর জন্য আলাদা message: "You have an appointment with [Patient Name] at 10:00 PM."
+- Patient-কে appointment confirm/reject হলে notification — existing `appointment-action` edge function-এ patient notification trigger যোগ করবো।
+
+**UI buttons (refined wording)**:
+- "Join Video" / "Start Video" সব জায়গা থেকে replace → "Start your appointment" (10:00 আগে কিছুই দেখাবে না, joinable হলে এই button)।
+- Patient side-এ একই button: "Join your appointment"।
+- Doctor-only extra button: "End Session" (only between 10:00 PM – 10:30 PM, only when status was joinable)।
+
+**End Session flow**:
+- Doctor "End Session" click করলে: `session_ended_at = now()`, `session_ended_by = 'doctor'`, status → `completed`। Realtime subscription দিয়ে patient dashboard থেকেও instantly button disappear।
+
+**Post-call popup for doctor** (`VideoCallPage.tsx` enhancement):
+- Doctor `left-meeting` event-এ একটা dialog: "Was the meeting completed?"
+  - "Yes, End Session" → above end-session call।
+  - "No, ask patient to rejoin" → notification পাঠাবে patient-কে: "Your meeting has not been completed yet. Please join again."
+
+**Meeting quality tracking (internal)**:
+- `joined-meeting` / `left-meeting` event-এ doctor/patient join/leave timestamps save।
+- Doctor leave করার সময় calculate: if both stayed ≥10 min → `meeting_quality = 'completed'`, else `'short'`। কোনো automatic action নয়, শুধু store।
+
+**Doctor appointment confirm/reject notification**:
+- যখন patient book করে → doctor dashboard-এ existing notification UI আছে। সেটা polish করবো এবং confirm করলে patient-এর কাছে notification যাবে।
+
+---
+
+## 3. Profile Picture: Premium Upload + Cropper
+
+**নতুন UI**:
+- Circular avatar-এর নিচে-ডানে একটা ছোট camera/edit icon button (Facebook-style)। Click করলে file picker।
+- File select করার পর একটা modal খুলবে — **circular crop tool** (react-easy-crop ব্যবহার করবো, lightweight)। User zoom + drag করে crop করতে পারবে।
+- "Save" করলে cropped image compress হয়ে upload হবে।
+
+**RLS error fix**:
+- `useSupabaseStorage` / avatar upload logic check করবো। বর্তমান error: "new row violates row-level security policy"। Most likely `avatars` bucket-এ insert policy আছে কিন্তু path-এ user_id check করছে না। Storage policy update করে `auth.uid()::text = (storage.foldername(name))[1]` pattern follow করাবো এবং upload path-এ user id prefix দেবো।
+
+---
+
+## 4. Swipe Gesture Support
+
+- Mobile-এ left→right swipe হলে previous tab, right→left হলে next tab।
+- `src/pages/Index.tsx` এবং `src/pages/PatientDashboard.tsx`-এর main content area-এ touch handler যোগ করবো (lightweight, কোনো লাইব্রেরি ছাড়াই — touchstart/touchmove/touchend)।
+- Tab order: dashboard → patients → appointments → history → settings।
+
+---
+
+## 5. Settings: Remove Notifications Tab
+
+- `src/pages/SettingsPage.tsx` থেকে Notifications section সম্পূর্ণ remove।
+
+---
+
+## 6. User Manual Refinement
+
+- `src/components/PatientUserManual.tsx` review করবো — ভাঙা শব্দ ঠিক করবো, Bangla/English ভাষা refine করবো, formatting polish।
+
+---
+
+## 7. Login Screen Enhancements
+
+- Top-right corner-এ দুটো small toggle: theme switcher (sun/moon/system) এবং language toggle (EN / বাং)।
+- Layout balance ঠিক রাখবো।
+
+---
+
+## 8. Auto Login (Persistent Session)
+
+- Supabase client এ `persistSession: true`, `autoRefreshToken: true`, `storage: localStorage` (web) এবং Capacitor Preferences (native) নিশ্চিত করবো।
+- App reload-এ session restore হবে, user-কে আবার login করতে হবে না।
+
+---
+
+## 9. Loading Spinner Redesign
+
+- `BrandedSpinner.tsx` redesign — conic gradient ring + MedHelp mark + soft pulse, app theme-এর সাথে match।
+
+---
+
+## 10. Doctor Dashboard Fixes
+
+- Appointments tab-এর card overflow issue fix — `AppointmentsTab.tsx`-এ proper `overflow-hidden` / `min-w-0` / responsive grid।
+- Sidebar header থেকে logo সরানো (already in step 1)।
+
+---
+
+## 11. Performance & Polish
+
+- React `memo`, `useCallback`, `useMemo` যেখানে দরকার সেখানে add।
+- Mobile responsiveness audit।
+- Page transitions smooth করবো।
+
+---
+
+## 12. Google Login Technical Documentation
+
+Markdown ফাইল `GOOGLE_LOGIN.md` তৈরি করবো বিস্তারিত technical details সহ:
+- **Plugin**: `@capgo/capacitor-social-login` (native Android/iOS) + Supabase `signInWithIdToken` (server verification)।
+- **Method**: Native Google Sign-In via Credential Manager (Android 14+) with fallback to standard chooser sheet।
+- **OAuth setup**: Google Cloud Console → Web Client ID → configured in `capacitor.config.ts` under `plugins.SocialLogin.google.webClientId`।
+- **Flow**:
+  1. App calls `SocialLogin.login({ provider: 'google' })`
+  2. Native UI returns `idToken`
+  3. Frontend sends `idToken` to Supabase via `supabase.auth.signInWithIdToken({ provider: 'google', token })`
+  4. Supabase verifies token signature against Google's JWKS, creates session
+- **MainActivity patch**: `scripts/patch-android-main-activity.mjs` ensures `onActivityResult` routes to plugin (required by Capgo)।
+- **Web fallback**: `supabase.auth.signInWithOAuth({ provider: 'google' })` redirect flow।
+- **Libraries involved**: `@capacitor/core`, `@capgo/capacitor-social-login`, `@supabase/supabase-js`।
+
+---
+
+## Technical Details (for the curious)
+
+- **Files to create**: 1 migration, 1 cron edge function, `GOOGLE_LOGIN.md`, new logo assets, cropper component, post-call dialog component।
+- **Files to modify**: `Index.tsx`, `PatientDashboard.tsx`, `AppointmentsTab.tsx`, `VideoCallPage.tsx`, `appointmentWindow.ts`, `SettingsPage.tsx`, `PatientUserManual.tsx`, `BrandedSpinner.tsx`, `PatientAuthPage.tsx`, `index.html`, `manifest.json`, `capacitor.config.ts`, supabase client config।
+- **New dependencies**: `react-easy-crop` (lightweight, ~30KB) for circular avatar cropping।
+- **Storage policy migration**: avatars bucket-এ proper RLS।
+
+---
+
+## ⚠️ Scope Note
+
+এটা একটা বড় change set। আমি step-by-step একই session-এ সব করতে পারবো, কিন্তু কোনো একটা specific group-এ আপনি যদি অগ্রাধিকার দিতে চান (যেমন "আগে logo + favicon + session flow ঠিক করো, বাকিগুলো পরে"), জানালে সেটা আগে করে দেবো। অথবা plan approve করলে পুরোটা একসাথে implement শুরু করবো।
