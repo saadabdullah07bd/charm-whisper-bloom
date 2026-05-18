@@ -53,7 +53,7 @@ export async function signInWithGoogleNative() {
   // requires modifying MainActivity for extra scopes and will throw
   // "You cannot use scopes without modifying the main activity".
   // The default Google sign-in already returns email + profile + idToken.
-  let res;
+  let res: any;
   try {
     res = await SocialLogin.login({
       provider: 'google',
