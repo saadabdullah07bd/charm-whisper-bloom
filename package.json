@@ -10,7 +10,12 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cap:sync": "vite build && cap sync android",
+    "cap:add:android": "cap add android",
+    "cap:open:android": "cap open android",
+    "android:build": "vite build && cap sync android && cd android && ./gradlew assembleDebug",
+    "android:release": "vite build && cap sync android && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",
