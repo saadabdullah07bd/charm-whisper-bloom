@@ -43,6 +43,17 @@ const Index: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [theme, setTheme] = useTheme();
   const [stageFilter, setStageFilter] = useState<string>('');
+  const swipeRef = useSwipeNavigation<HTMLElement>({
+    enabled: !selectedPatient,
+    onSwipeLeft: () => {
+      const i = tabs.findIndex(x => x.key === tab);
+      if (i >= 0 && i < tabs.length - 1) setTab(tabs[i + 1].key);
+    },
+    onSwipeRight: () => {
+      const i = tabs.findIndex(x => x.key === tab);
+      if (i > 0) setTab(tabs[i - 1].key);
+    },
+  });
 
   useEffect(() => {
     const labels: Record<string, { title: string; desc: string; path: string }> = {
