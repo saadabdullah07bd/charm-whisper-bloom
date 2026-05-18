@@ -28,7 +28,7 @@ const config: CapacitorConfig = {
       // webClientId = the "Web application" client ID (used by Supabase too)
       // Android automatically uses the Android OAuth client (SHA-1 matched) — no androidClientId field needed.
       google: {
-        webClientId: 'REPLACE_WITH_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+        webClientId: '498318841307-hjim9efued265v7r5tqfjvqcdpm6jq8h.apps.googleusercontent.com',
         mode: 'online',
       },
     },
