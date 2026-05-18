@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { setPageMeta } from "@/lib/pageMeta";
 import medhelpLogo from "@/assets/medhelp-logo.png";
+import { signInWithGoogleNative } from "@/lib/nativeAuth";
 
 interface Props {
   onSwitchToDoctor?: () => void;
@@ -27,11 +27,8 @@ const PatientAuthPage: React.FC<Props> = (_props) => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: window.location.origin },
-      });
-      if (error) throw error;
+      // Native in-app Google sign-in on Android/iOS, OAuth redirect on web.
+      await signInWithGoogleNative();
     } catch (err: any) {
       console.error("[handleGoogleLogin]", err);
       toast.error(err?.message || t('auth.signInFailed'));
