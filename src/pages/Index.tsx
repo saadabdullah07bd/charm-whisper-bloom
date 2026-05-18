@@ -16,6 +16,7 @@ import SettingsPage from './SettingsPage';
 import SearchModal from '@/components/SearchModal';
 import AppointmentsTab from '@/components/AppointmentsTab';
 import MobileBottomTabs from '@/components/MobileBottomTabs';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 
 type Tab = 'dashboard' | 'patients' | 'history' | 'appointments' | 'settings';
 
