@@ -3,6 +3,20 @@ import { SocialLogin } from '@capgo/capacitor-social-login';
 import { supabase } from '@/integrations/supabase/client';
 
 let initialized = false;
+const GOOGLE_WEB_CLIENT_PLACEHOLDER = 'REPLACE_WITH_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
+
+function getGoogleWebClientId() {
+  return (
+    (import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined) ||
+    GOOGLE_WEB_CLIENT_PLACEHOLDER
+  );
+}
+
+function isGoogleCancelError(error: unknown) {
+  const anyError = error as { message?: string; code?: string };
+  const message = `${anyError?.message ?? ''} ${anyError?.code ?? ''}`.toLowerCase();
+  return message.includes('cancelled') || message.includes('canceled') || message.includes('user_cancelled');
+}
 
 /**
  * Initialise native Google sign-in once on app start (no-op on web).
@@ -10,9 +24,7 @@ let initialized = false;
  */
 export async function initNativeAuth() {
   if (initialized || !Capacitor.isNativePlatform()) return;
-  const webClientId =
-    (import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined) ||
-    'REPLACE_WITH_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
+  const webClientId = getGoogleWebClientId();
   await SocialLogin.initialize({
     google: { webClientId, mode: 'online' },
   });
@@ -32,14 +44,34 @@ export async function signInWithGoogleNative() {
   }
 
   await initNativeAuth();
+  const webClientId = getGoogleWebClientId();
+  if (!webClientId || webClientId === GOOGLE_WEB_CLIENT_PLACEHOLDER) {
+    throw new Error('Google Web Client ID সেট করা হয়নি। capacitor.config.ts অথবা VITE_GOOGLE_WEB_CLIENT_ID-তে Web Client ID দিন।');
+  }
+
   // NOTE: Do NOT pass custom `scopes` here — @capgo/capacitor-social-login
   // requires modifying MainActivity for extra scopes and will throw
   // "You cannot use scopes without modifying the main activity".
   // The default Google sign-in already returns email + profile + idToken.
-  const res = await SocialLogin.login({
-    provider: 'google',
-    options: {},
-  });
+  let res;
+  try {
+    res = await SocialLogin.login({
+      provider: 'google',
+      options: {
+        style: 'bottom',
+        filterByAuthorizedAccounts: false,
+        autoSelectEnabled: false,
+      },
+    });
+  } catch (error) {
+    if (!isGoogleCancelError(error)) throw error;
+    res = await SocialLogin.login({
+      provider: 'google',
+      options: {
+        style: 'standard',
+      },
+    });
+  }
 
   // @capgo/capacitor-social-login returns { result: { idToken, accessToken, ... } }
   const anyRes = res as any;
