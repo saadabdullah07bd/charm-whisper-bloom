@@ -17,28 +17,28 @@ const BrandedSpinner: React.FC<Props> = ({ size = 72, label, fullscreen = false 
       className="relative flex items-center justify-center"
       style={{ width: size, height: size }}
     >
-      {/* rotating ring */}
+      <div className="absolute inset-0 rounded-full border border-primary/10" />
       <div
         className="absolute inset-0 rounded-full animate-spin"
         style={{
           background:
-            "conic-gradient(from 0deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.05) 70%, hsl(var(--primary)) 100%)",
-          animationDuration: "1.1s",
+            "conic-gradient(from 0deg, transparent 0deg, hsl(var(--primary) / 0.12) 90deg, hsl(var(--primary)) 170deg, transparent 260deg)",
+          animationDuration: "0.95s",
           maskImage:
             "radial-gradient(circle, transparent 58%, #000 60%, #000 100%)",
           WebkitMaskImage:
             "radial-gradient(circle, transparent 58%, #000 60%, #000 100%)",
         }}
       />
-      {/* pulsing mark */}
+      <div className="absolute inset-[18%] rounded-full bg-card shadow-lg" />
       <img
         src={medhelpMark}
         alt=""
         className="relative rounded-full animate-pulse"
         style={{
-          width: size * 0.55,
-          height: size * 0.55,
-          animationDuration: "1.6s",
+          width: size * 0.5,
+          height: size * 0.5,
+          animationDuration: "1.35s",
         }}
       />
     </div>
@@ -50,7 +50,7 @@ const BrandedSpinner: React.FC<Props> = ({ size = 72, label, fullscreen = false 
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background gap-4 animate-fade-in">
       {ring}
       {label && (
-        <p className="text-sm text-muted-foreground" style={{ fontFamily: "'Poppins', sans-serif" }}>
+        <p className="text-sm font-medium text-muted-foreground" style={{ fontFamily: "'Poppins', sans-serif" }}>
           {label}
         </p>
       )}
