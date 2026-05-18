@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedHelp — রোগীর তথ্য ফর্ম</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Poppins', 'Noto Sans Bengali', sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%); color: #222; min-height: 100vh; padding-bottom: 40px; }
+
+    .logo { text-align: center; padding: 40px 0 6px; font-size: 32px; font-weight: 700; letter-spacing: 1px; color: #111; }
+    .logo span { background: linear-gradient(135deg, #111 0%, #444 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { text-align: center; font-size: 15px; color: #777; margin-bottom: 12px; font-weight: 400; }
+
+    .lang-slider { display: flex; justify-content: center; margin-bottom: 28px; }
+    .lang-slider-track {
+      display: flex; position: relative; background: #e0e0e0; border-radius: 28px; padding: 4px;
+      width: 200px; cursor: pointer; user-select: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .lang-slider-track .slider-bg {
+      position: absolute; top: 4px; left: 4px; width: calc(50% - 4px); height: calc(100% - 8px);
+      background: #111; border-radius: 24px; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .lang-slider-track.en .slider-bg { transform: translateX(100%); }
+    .lang-slider-track span {
+      flex: 1; text-align: center; font-size: 14px; font-family: inherit; padding: 8px 0;
+      position: relative; z-index: 1; transition: color 0.3s; cursor: pointer; font-weight: 500;
+    }
+    .lang-slider-track span.active { color: #fff; }
+    .lang-slider-track span:not(.active) { color: #666; }
+
+    .card {
+      max-width: 720px; margin: 0 auto 40px; background: #fff; border-radius: 20px; padding: 40px 44px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 12px 40px rgba(0,0,0,0.08);
+      animation: cardEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes cardEntry {
+      from { opacity: 0; transform: translateY(30px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    h2 {
+      font-size: 16px; font-weight: 600; color: #111; margin: 28px 0 14px; padding-bottom: 8px;
+      border-bottom: 2px solid #f0f0f0; letter-spacing: 0.3px;
+    }
+    h2:first-child { margin-top: 0; }
+
+    .row { display: flex; gap: 14px; margin-bottom: 14px; }
+    .row > * { flex: 1; }
+
+    label { display: block; font-size: 13px; font-weight: 500; color: #444; margin-bottom: 6px; }
+
+    input, select, textarea {
+      width: 100%; padding: 12px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px;
+      font-family: inherit; font-size: 15px; background: #fafafa; transition: all 0.25s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: #111; background: #fff;
+      box-shadow: 0 0 0 3px rgba(17,17,17,0.08);
+    }
+    input::placeholder, textarea::placeholder { color: #bbb; font-size: 13px; }
+    textarea { resize: vertical; min-height: 70px; }
+
+    .field { margin-bottom: 14px; }
+    .field, .row { animation: fieldFade 0.5s ease both; }
+    @keyframes fieldFade {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn {
+      display: block; width: 100%; padding: 16px; border: none; border-radius: 12px;
+      font-family: inherit; font-size: 16px; font-weight: 600; cursor: pointer;
+      transition: all 0.3s ease; letter-spacing: 0.3px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #111 0%, #333 100%); color: #fff; margin-top: 28px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .alert { padding: 14px 18px; border-radius: 10px; font-size: 14px; margin-top: 14px; display: none; }
+    .alert-error { background: #fce4ec; color: #c62828; }
+
+    .female-fields { display: none; }
+
+    /* Calendar styles */
+    .calendar-wrapper { margin-bottom: 14px; }
+    .calendar { border: 1.5px solid #e0e0e0; border-radius: 12px; overflow: hidden; background: #fafafa; }
+    .calendar-header {
+      display: flex; align-items: center; justify-content: space-between; padding: 12px 16px;
+      background: #111; color: #fff;
+    }
+    .calendar-header button {
+      background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; padding: 4px 8px;
+      border-radius: 6px; transition: background 0.2s;
+    }
+    .calendar-header button:hover { background: rgba(255,255,255,0.15); }
+    .calendar-header .month-year { font-weight: 600; font-size: 15px; }
+    .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+    .calendar-days .day-name {
+      padding: 8px 0; font-size: 11px; font-weight: 600; color: #888; background: #f5f5f5;
+    }
+    .calendar-days .day {
+      padding: 10px 0; font-size: 14px; cursor: pointer; transition: all 0.2s; border-radius: 0;
+      position: relative;
+    }
+    .calendar-days .day:hover:not(.disabled):not(.empty) { background: #f0f0f0; }
+    .calendar-days .day.selected { background: #111; color: #fff; font-weight: 600; }
+    .calendar-days .day.today { font-weight: 700; }
+    .calendar-days .day.today::after {
+      content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 4px; border-radius: 50%; background: #111;
+    }
+    .calendar-days .day.selected.today::after { background: #fff; }
+    .calendar-days .day.disabled { color: #ccc; cursor: not-allowed; }
+    .calendar-days .day.empty { cursor: default; }
+    .selected-date-display {
+      margin-top: 8px; padding: 8px 14px; background: #f5f5f5; border-radius: 8px;
+      font-size: 13px; color: #444; display: none;
+    }
+    .selected-date-display.active { display: block; }
+
+    /* Time slots */
+    .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+    .time-btn {
+      padding: 12px 8px; border: 1.5px solid #e0e0e0; border-radius: 10px; background: #fafafa;
+      font-family: inherit; font-size: 14px; cursor: pointer; transition: all 0.2s; text-align: center;
+      font-weight: 500;
+    }
+    .time-btn:hover:not(.booked) { border-color: #111; background: #f5f5f5; }
+    .time-btn.selected { background: #111; color: #fff; border-color: #111; }
+    .time-btn.booked { opacity: 0.4; cursor: not-allowed; background: #f0f0f0; text-decoration: line-through; }
+    .time-btn .slot-status { font-size: 10px; display: block; margin-top: 2px; }
+    .time-btn.booked .slot-status { color: #c62828; text-decoration: none; }
+
+    .popup-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 100; justify-content: center; align-items: center;
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    }
+    .popup-overlay.active { display: flex; }
+    .popup-box {
+      background: #fff; border-radius: 20px; padding: 48px 36px; text-align: center;
+      max-width: 420px; width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: popupIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes popupIn {
+      from { opacity: 0; transform: scale(0.85) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .popup-box .check-icon {
+      width: 64px; height: 64px; border-radius: 50%; background: #fff3e0;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
+      animation: checkBounce 0.5s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes checkBounce {
+      from { transform: scale(0); }
+      to { transform: scale(1); }
+    }
+    .popup-box .check-icon svg { width: 32px; height: 32px; color: #e65100; }
+    .popup-box h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: #111; }
+    .popup-box p { font-size: 15px; color: #666; line-height: 1.6; }
+
+    @media (max-width: 600px) {
+      .card { margin: 0 14px 24px; padding: 24px 20px; border-radius: 16px; }
+      .row { flex-direction: column; gap: 0; }
+      .logo { font-size: 26px; padding-top: 24px; }
+      .time-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="logo"><span>MedHelp</span></div>
+  <p class="subtitle" id="subtitle">আপনার তথ্য পূরণ করুন</p>
+
+  <div class="lang-slider">
+    <div class="lang-slider-track" id="langTrack">
+      <div class="slider-bg"></div>
+      <span id="btnBn" class="active" onclick="setLang('bn')">বাংলা</span>
+      <span id="btnEn" onclick="setLang('en')">English</span>
+    </div>
+  </div>
+
+  <form id="bookingForm" class="card" autocomplete="off">
+    <!-- Appointment Date & Time -->
+    <h2 id="secAppointment">📅 অ্যাপয়েন্টমেন্ট তারিখ ও সময়</h2>
+    <label id="lblDate">তারিখ নির্বাচন করুন *</label>
+    <div class="calendar-wrapper">
+      <div class="calendar">
+        <div class="calendar-header">
+          <button type="button" id="calPrev">&#8249;</button>
+          <span class="month-year" id="calMonthYear"></span>
+          <button type="button" id="calNext">&#8250;</button>
+        </div>
+        <div class="calendar-days" id="calDays"></div>
+      </div>
+      <div class="selected-date-display" id="selectedDateDisplay"></div>
+    </div>
+    <label id="lblTime">সময় নির্বাচন করুন * (রাত ৯:০০ - ১১:০০)</label>
+    <div class="time-grid" id="timeGrid"></div>
+
+    <h2 id="secPersonal">ব্যক্তিগত তথ্য</h2>
+    <div class="row">
+      <div><label id="lblName">পূর্ণ নাম *</label><input id="name" required placeholder="আপনার পূর্ণ নাম" /></div>
+      <div><label id="lblAge">বয়স (বছর) *</label><input id="age" type="number" min="0" max="150" required placeholder="বয়স" /></div>
+    </div>
+    <div class="row">
+      <div><label id="lblGender">লিঙ্গ *</label>
+        <select id="gender">
+          <option value="male" id="optMale">পুরুষ</option>
+          <option value="female" id="optFemale">মহিলা</option>
+          <option value="other" id="optOther">অন্যান্য</option>
+        </select>
+      </div>
+      <div><label id="lblMarital">বৈবাহিক অবস্থা</label>
+        <select id="maritalStatus">
+          <option value="single" id="optSingle">অবিবাহিত</option>
+          <option value="married" id="optMarried">বিবাহিত</option>
+          <option value="divorced" id="optDivorced">তালাকপ্রাপ্ত</option>
+          <option value="widowed" id="optWidowed">বিধবা/বিপত্নীক</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label id="lblPhone">মোবাইল নম্বর *</label><input id="phone" type="tel" required placeholder="০১XXXXXXXXX" /></div>
+      <div><label id="lblOccupation">পেশা / কাজ</label><input id="occupation" placeholder="আপনার পেশা" /></div>
+    </div>
+    <div class="field"><label id="lblAddress">ঠিকানা (গ্রাম/শহর, জেলা)</label><input id="address" placeholder="গ্রাম/শহর, জেলা" /></div>
+
+    <h2 id="secVitals">শারীরিক তথ্য</h2>
+    <div class="row">
+      <div><label id="lblWeight">ওজন (কেজি)</label><input id="weight" type="number" step="0.1" placeholder="কেজি" /></div>
+      <div><label id="lblHeightFt">উচ্চতা (ফুট)</label><input id="heightFeet" type="number" min="0" max="8" placeholder="ফুট" /></div>
+      <div><label id="lblHeightIn">উচ্চতা (ইঞ্চি)</label><input id="heightInches" type="number" min="0" max="11" placeholder="ইঞ্চি" /></div>
+    </div>
+
+    <h2 id="secMedical">বর্তমান অসুস্থতার তথ্য</h2>
+    <div class="field"><label id="lblComplaint">মূল সমস্যা / প্রধান অভিযোগ</label><textarea id="chiefComplaint" rows="2" placeholder="যেমন: জ্বর, মাথাব্যথা, পেটব্যথা ইত্যাদি"></textarea></div>
+    <div class="field"><label id="lblHpi">অসুখ শুরু হওয়ার বিবরণ</label><textarea id="hpi" rows="3" placeholder="কখন থেকে শুরু, কেমন অনুভব হচ্ছে"></textarea></div>
+    <div class="field"><label id="lblAllergies">অ্যালার্জি (কমা দিয়ে আলাদা করুন)</label><input id="allergies" placeholder="যেমন: পেনিসিলিন, ডিম, ধুলা" /></div>
+    <div class="field"><label id="lblConditions">বর্তমান বা পুরনো রোগ (কমা দিয়ে আলাদা করুন)</label><input id="conditions" placeholder="যেমন: ডায়াবেটিস, উচ্চ রক্তচাপ, হাঁপানি" /></div>
+
+    <div class="female-fields" id="femaleFields">
+      <h2 id="secObgyn">মহিলাদের জন্য (প্রসূতি/স্ত্রীরোগ)</h2>
+      <div class="row">
+        <div><label id="lblPregnancy">গর্ভাবস্থার অবস্থা</label>
+          <select id="pregnancyStatus">
+            <option value="" id="optNA">প্রযোজ্য নয়</option>
+            <option value="pregnant" id="optPregnant">গর্ভবতী</option>
+            <option value="not_pregnant" id="optNotPregnant">গর্ভবতী নয়</option>
+          </select>
+        </div>
+        <div><label id="lblChildbirths">পূর্বে কতবার সন্তান হয়েছে</label><input id="childbirths" type="number" min="0" placeholder="সংখ্যা" /></div>
+      </div>
+      <div class="field"><label id="lblObgynHistory">প্রসূতি/স্ত্রীরোগ সংক্রান্ত ইতিহাস</label><textarea id="obgyn" rows="2" placeholder="বিস্তারিত লিখুন"></textarea></div>
+    </div>
+
+    <h2 id="secDetailed">পূর্ববর্তী স্বাস্থ্য ইতিহাস</h2>
+    <div class="field"><label id="lblPastIllness">অতীতের অসুস্থতা ও অপারেশন</label><textarea id="pastIllness" rows="2" placeholder="যেমন: টাইফয়েড, অপারেশন"></textarea></div>
+    <div class="field"><label id="lblTreatment">পূর্বের চিকিৎসা</label><textarea id="treatmentHistory" rows="2" placeholder="পূর্বে কী কী চিকিৎসা নিয়েছেন"></textarea></div>
+    <div class="field"><label id="lblDrug">বর্তমানে যে ওষুধ খাচ্ছেন</label><textarea id="drugHistory" rows="2" placeholder="ওষুধের নাম ও ডোজ"></textarea></div>
+    <div class="field"><label id="lblPersonal">ব্যক্তিগত অভ্যাস</label><textarea id="personalHistory" rows="2" placeholder="ধূমপান, মদ্যপান, খাদ্যাভ্যাস"></textarea></div>
+    <div class="field"><label id="lblImmunization">টিকাদানের ইতিহাস</label><textarea id="immunization" rows="2" placeholder="যেমন: কোভিড, টিটেনাস"></textarea></div>
+
+    <button type="submit" class="btn btn-primary" id="submitBtn">অ্যাপয়েন্টমেন্ট বুক করুন</button>
+    <div id="errorAlert" class="alert alert-error"></div>
+  </form>
+
+  <div class="popup-overlay" id="thankYouPopup">
+    <div class="popup-box">
+      <div class="check-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      </div>
+      <h3 id="popupTitle">বুকিং সম্পন্ন!</h3>
+      <p id="popupMsg">আপনার অ্যাপয়েন্টমেন্ট পেন্ডিং আছে। আপনি শীঘ্রই একটি কনফার্মেশন পাবেন।</p>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_PROJECT_REF = 'dplhuctylxfhzqidxzze';
+    const EDGE_FUNCTION_URL = `https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/public-booking`;
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwbGh1Y3R5bHhmaHpxaWR4enplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMzAzMzcsImV4cCI6MjA5MDgwNjMzN30.TXGn7jV8qLMA8mG3vEe2s8w97hbb_o8ME6RpBbssIpc';
+    const REDIRECT_URL = 'https://drmabari.com/thanks';
+
+    const $ = id => document.getElementById(id);
+    const val = id => ($(id)?.value?.trim() || '');
+
+    let selectedDate = null;
+    let selectedTime = null;
+    let bookedSlots = {};
+    let calYear, calMonth;
+
+    const TIME_SLOTS = ['9:00 PM', '9:30 PM', '10:00 PM', '10:30 PM'];
+
+    // Calendar
+    function initCalendar() {
+      const today = new Date();
+      calYear = today.getFullYear();
+      calMonth = today.getMonth();
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const maxDate = new Date(today); maxDate.setDate(maxDate.getDate() + 11);
+
+      const monthNames = currentLang === 'bn'
+        ? ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর']
+        : ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+      const dayNames = currentLang === 'bn'
+        ? ['রবি','সোম','মঙ্গল','বুধ','বৃহঃ','শুক্র','শনি']
+        : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+      $('calMonthYear').textContent = `${monthNames[calMonth]} ${calYear}`;
+
+      const grid = $('calDays');
+      grid.innerHTML = '';
+
+      // Day name headers
+      dayNames.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'day-name';
+        el.textContent = d;
+        grid.appendChild(el);
+      });
+
+      // First day of month
+      const firstDay = new Date(calYear, calMonth, 1).getDay();
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+      // Empty cells before first day
+      for (let i = 0; i < firstDay; i++) {
+        const el = document.createElement('div');
+        el.className = 'day empty';
+        grid.appendChild(el);
+      }
+
+      // Day cells
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(calYear, calMonth, d);
+        date.setHours(0,0,0,0);
+        const dateStr = date.toISOString().split('T')[0];
+
+        const el = document.createElement('div');
+        el.className = 'day';
+        el.textContent = d;
+
+        const isToday = date.getTime() === today.getTime();
+        const isSelectable = date >= today && date <= maxDate;
+
+        if (isToday) el.classList.add('today');
+        if (!isSelectable) el.classList.add('disabled');
+        if (selectedDate === dateStr) el.classList.add('selected');
+
+        if (isSelectable) {
+          el.onclick = () => selectDate(dateStr);
+        }
+
+        grid.appendChild(el);
+      }
+
+      // Disable nav buttons if out of range
+      const prevMonth = new Date(calYear, calMonth, 0);
+      const nextMonth = new Date(calYear, calMonth + 1, 1);
+      $('calPrev').style.visibility = prevMonth < today && calMonth <= today.getMonth() && calYear <= today.getFullYear() ? 'hidden' : 'visible';
+      $('calNext').style.visibility = nextMonth > maxDate ? 'hidden' : 'visible';
+    }
+
+    $('calPrev').onclick = () => { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); };
+    $('calNext').onclick = () => { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); };
+
+    function selectDate(dateStr) {
+      selectedDate = dateStr;
+      selectedTime = null;
+      renderCalendar();
+
+      // Show selected date
+      const d = new Date(dateStr + 'T00:00:00');
+      const dayNames = currentLang === 'bn'
+        ? ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার']
+        : ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const display = $('selectedDateDisplay');
+      display.textContent = currentLang === 'bn'
+        ? `📅 নির্বাচিত: ${dayNames[d.getDay()]}, ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`
+        : `📅 Selected: ${dayNames[d.getDay()]}, ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+      display.classList.add('active');
+
+      loadSlots(dateStr);
+    }
+
+    async function loadSlots(dateStr) {
+      const grid = $('timeGrid');
+      grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#888;font-size:13px;">Loading...</p>';
+
+      try {
+        const res = await fetch(
+          `https://${SUPABASE_PROJECT_REF}.supabase.co/rest/v1/rpc/get_booked_slots`,
+          {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ target_date: dateStr }),
+          }
+        );
+        const data = await res.json();
+        const booked = new Set((data || []).map(r => r.time_slot));
+        bookedSlots[dateStr] = booked;
+      } catch {
+        bookedSlots[dateStr] = new Set();
+      }
+
+      renderTimeSlots(dateStr);
+    }
+
+    function renderTimeSlots(dateStr) {
+      const grid = $('timeGrid');
+      grid.innerHTML = '';
+      const booked = bookedSlots[dateStr] || new Set();
+
+      TIME_SLOTS.forEach(slot => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const isBooked = booked.has(slot);
+        btn.className = `time-btn${isBooked ? ' booked' : ''}${selectedTime === slot ? ' selected' : ''}`;
+        const statusText = currentLang === 'bn'
+          ? (isBooked ? 'বুকড' : 'খালি')
+          : (isBooked ? 'Booked' : 'Available');
+        btn.innerHTML = `${slot}<span class="slot-status">${statusText}</span>`;
+        if (!isBooked) {
+          btn.onclick = () => {
+            selectedTime = slot;
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+          };
+        }
+        grid.appendChild(btn);
+      });
+    }
+
+    const placeholders = {
+      bn: {
+        name: 'আপনার পূর্ণ নাম', age: 'বয়স', phone: '০১XXXXXXXXX', occupation: 'আপনার পেশা',
+        address: 'গ্রাম/শহর, জেলা', weight: 'কেজি', heightFeet: 'ফুট', heightInches: 'ইঞ্চি',
+        chiefComplaint: 'যেমন: জ্বর, মাথাব্যথা, পেটব্যথা ইত্যাদি',
+        hpi: 'কখন থেকে শুরু, কেমন অনুভব হচ্ছে',
+        allergies: 'যেমন: পেনিসিলিন, ডিম, ধুলা',
+        conditions: 'যেমন: ডায়াবেটিস, উচ্চ রক্তচাপ, হাঁপানি',
+        childbirths: 'সংখ্যা', obgyn: 'বিস্তারিত লিখুন',
+        pastIllness: 'যেমন: টাইফয়েড, অপারেশন',
+        treatmentHistory: 'পূর্বে কী কী চিকিৎসা নিয়েছেন',
+        drugHistory: 'ওষুধের নাম ও ডোজ',
+        personalHistory: 'ধূমপান, মদ্যপান, খাদ্যাভ্যাস',
+        immunization: 'যেমন: কোভিড, টিটেনাস',
+      },
+      en: {
+        name: 'Your full name', age: 'Age', phone: '01XXXXXXXXX', occupation: 'Your occupation',
+        address: 'Village/City, District', weight: 'kg', heightFeet: 'Feet', heightInches: 'Inches',
+        chiefComplaint: 'e.g. Fever, headache, stomach pain',
+        hpi: 'When it started, how it feels',
+        allergies: 'e.g. Penicillin, eggs, dust',
+        conditions: 'e.g. Diabetes, hypertension, asthma',
+        childbirths: 'Number', obgyn: 'Write details',
+        pastIllness: 'e.g. Typhoid, surgery',
+        treatmentHistory: 'Previous treatments received',
+        drugHistory: 'Medicine names & doses',
+        personalHistory: 'Smoking, alcohol, diet habits',
+        immunization: 'e.g. COVID, tetanus',
+      }
+    };
+
+    const translations = {
+      bn: {
+        subtitle: 'আপনার তথ্য পূরণ করুন',
+        secAppointment: '📅 অ্যাপয়েন্টমেন্ট তারিখ ও সময়',
+        lblDate: 'তারিখ নির্বাচন করুন *', lblTime: 'সময় নির্বাচন করুন * (রাত ৯:০০ - ১১:০০)',
+        secPersonal: 'ব্যক্তিগত তথ্য',
+        lblName: 'পূর্ণ নাম *', lblAge: 'বয়স (বছর) *', lblGender: 'লিঙ্গ *', lblMarital: 'বৈবাহিক অবস্থা',
+        lblPhone: 'মোবাইল নম্বর *', lblOccupation: 'পেশা / কাজ', lblAddress: 'ঠিকানা (গ্রাম/শহর, জেলা)',
+        optMale: 'পুরুষ', optFemale: 'মহিলা', optOther: 'অন্যান্য',
+        optSingle: 'অবিবাহিত', optMarried: 'বিবাহিত', optDivorced: 'তালাকপ্রাপ্ত', optWidowed: 'বিধবা/বিপত্নীক',
+        secVitals: 'শারীরিক তথ্য',
+        lblWeight: 'ওজন (কেজি)', lblHeightFt: 'উচ্চতা (ফুট)', lblHeightIn: 'উচ্চতা (ইঞ্চি)',
+        secMedical: 'বর্তমান অসুস্থতার তথ্য',
+        lblComplaint: 'মূল সমস্যা / প্রধান অভিযোগ', lblHpi: 'অসুখ শুরু হওয়ার বিবরণ',
+        lblAllergies: 'অ্যালার্জি (কমা দিয়ে আলাদা করুন)', lblConditions: 'বর্তমান বা পুরনো রোগ (কমা দিয়ে আলাদা করুন)',
+        secObgyn: 'মহিলাদের জন্য (প্রসূতি/স্ত্রীরোগ)',
+        lblPregnancy: 'গর্ভাবস্থার অবস্থা', optNA: 'প্রযোজ্য নয়', optPregnant: 'গর্ভবতী', optNotPregnant: 'গর্ভবতী নয়',
+        lblChildbirths: 'পূর্বে কতবার সন্তান হয়েছে', lblObgynHistory: 'প্রসূতি/স্ত্রীরোগ সংক্রান্ত ইতিহাস',
+        secDetailed: 'পূর্ববর্তী স্বাস্থ্য ইতিহাস',
+        lblPastIllness: 'অতীতের অসুস্থতা ও অপারেশন', lblTreatment: 'পূর্বের চিকিৎসা',
+        lblDrug: 'বর্তমানে যে ওষুধ খাচ্ছেন', lblPersonal: 'ব্যক্তিগত অভ্যাস', lblImmunization: 'টিকাদানের ইতিহাস',
+        submitBtn: 'অ্যাপয়েন্টমেন্ট বুক করুন', submitting: 'বুক হচ্ছে…',
+        popupTitle: 'বুকিং সম্পন্ন!', popupMsg: 'আপনার অ্যাপয়েন্টমেন্ট পেন্ডিং আছে। আপনি শীঘ্রই একটি কনফার্মেশন পাবেন।',
+      },
+      en: {
+        subtitle: 'Fill Your Information',
+        secAppointment: '📅 Appointment Date & Time',
+        lblDate: 'Select Date *', lblTime: 'Select Time Slot * (9:00 PM – 11:00 PM GMT+6)',
+        secPersonal: 'Personal Information',
+        lblName: 'Full Name *', lblAge: 'Age (years) *', lblGender: 'Gender *', lblMarital: 'Marital Status',
+        lblPhone: 'Mobile Number *', lblOccupation: 'Occupation', lblAddress: 'Address (Village/City, District)',
+        optMale: 'Male', optFemale: 'Female', optOther: 'Other',
+        optSingle: 'Single', optMarried: 'Married', optDivorced: 'Divorced', optWidowed: 'Widowed',
+        secVitals: 'Physical Measurements',
+        lblWeight: 'Weight (kg)', lblHeightFt: 'Height (feet)', lblHeightIn: 'Height (inches)',
+        secMedical: 'Current Illness Information',
+        lblComplaint: 'Chief Complaint', lblHpi: 'Description of Illness',
+        lblAllergies: 'Allergies (comma separated)', lblConditions: 'Current or Past Diseases (comma separated)',
+        secObgyn: 'For Women (OB/GYN)',
+        lblPregnancy: 'Pregnancy Status', optNA: 'N/A', optPregnant: 'Pregnant', optNotPregnant: 'Not Pregnant',
+        lblChildbirths: 'Previous Childbirths', lblObgynHistory: 'OB/GYN History',
+        secDetailed: 'Previous Health History',
+        lblPastIllness: 'Past Illnesses & Operations', lblTreatment: 'Previous Treatment',
+        lblDrug: 'Current Medications', lblPersonal: 'Personal Habits', lblImmunization: 'Immunization History',
+        submitBtn: 'Book Appointment', submitting: 'Booking…',
+        popupTitle: 'Booking Complete!', popupMsg: 'Your booking is pending. You will receive a confirmation soon.',
+      }
+    };
+
+    let currentLang = 'bn';
+
+    function setLang(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang;
+      const track = $('langTrack');
+      track.classList.toggle('en', lang === 'en');
+      $('btnBn').classList.toggle('active', lang === 'bn');
+      $('btnEn').classList.toggle('active', lang === 'en');
+      const t = translations[lang];
+      Object.keys(t).forEach(key => {
+        const el = $(key);
+        if (el) el.textContent = t[key];
+      });
+      const p = placeholders[lang];
+      Object.keys(p).forEach(key => {
+        const el = $(key);
+        if (el) el.placeholder = p[key];
+      });
+      renderCalendar();
+      if (selectedDate) {
+        selectDate(selectedDate);
+        renderTimeSlots(selectedDate);
+      }
+    }
+
+    $('gender').addEventListener('change', () => {
+      $('femaleFields').style.display = $('gender').value === 'female' ? 'block' : 'none';
+    });
+
+    $('bookingForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = $('submitBtn');
+      const errorEl = $('errorAlert');
+      const t = translations[currentLang];
+      errorEl.style.display = 'none';
+
+      if (!selectedDate || !selectedTime) {
+        const msg = currentLang === 'bn' ? 'অনুগ্রহ করে তারিখ ও সময় নির্বাচন করুন' : 'Please select a date and time slot';
+        errorEl.textContent = '❌ ' + msg;
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = t.submitting;
+
+      const heightFeet = parseInt(val('heightFeet')) || null;
+      const heightInches = parseInt(val('heightInches')) || null;
+      const heightCm = heightFeet ? Math.round((heightFeet * 12 + (heightInches || 0)) * 2.54) : null;
+
+      const body = {
+        name: val('name'),
+        age: parseInt(val('age')),
+        gender: val('gender'),
+        marital_status: val('maritalStatus'),
+        phone: val('phone') || null,
+        occupation: val('occupation') || null,
+        address: val('address') || null,
+        weight: parseFloat(val('weight')) || null,
+        height_feet: heightFeet,
+        height_inches: heightInches,
+        height_cm: heightCm,
+        chief_complaint: val('chiefComplaint') || null,
+        history_of_present_illness: val('hpi') || null,
+        allergies: val('allergies') ? val('allergies').split(',').map(s => s.trim()).filter(Boolean) : [],
+        medical_conditions: val('conditions') ? val('conditions').split(',').map(s => s.trim()).filter(Boolean) : [],
+        pregnancy_status: val('pregnancyStatus') || null,
+        previous_childbirths: parseInt(val('childbirths')) || null,
+        ob_gyn_history: val('obgyn') || null,
+        past_illness_history: val('pastIllness') || null,
+        treatment_history: val('treatmentHistory') || null,
+        drug_history: val('drugHistory') || null,
+        personal_history: val('personalHistory') || null,
+        immunization_history: val('immunization') || null,
+        appointment_date: selectedDate,
+        time_slot: selectedTime,
+      };
+
+      try {
+        const res = await fetch(EDGE_FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Submission failed');
+
+        $('thankYouPopup').classList.add('active');
+        setTimeout(() => { window.location.href = REDIRECT_URL; }, 4000);
+      } catch (err) {
+        errorEl.textContent = '❌ ' + err.message;
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = t.submitBtn;
+      }
+    });
+
+    // Init
+    initCalendar();
+  </script>
+</body>
+</html>

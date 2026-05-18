@@ -1,0 +1,9 @@
+# MedHelp
+
+> MedHelp is a secure portal for doctors and patients to manage appointments, prescriptions, visits, and patient records.
+
+## Pages
+
+- [Home](/): Doctor and patient sign-in plus the main dashboard.
+- [Privacy Policy](/privacy-policy): How MedHelp collects, uses, and safeguards user data.
+- [Terms of Service](/terms-of-service): The agreement that governs use of MedHelp.
