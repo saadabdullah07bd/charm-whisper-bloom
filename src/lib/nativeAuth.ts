@@ -1,13 +1,16 @@
 import { Capacitor } from '@capacitor/core';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { supabase } from '@/integrations/supabase/client';
+import capacitorConfig from '../../capacitor.config';
 
 let initialized = false;
 const GOOGLE_WEB_CLIENT_PLACEHOLDER = 'REPLACE_WITH_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
 
 function getGoogleWebClientId() {
+  const configClientId = (capacitorConfig as any)?.plugins?.SocialLogin?.google?.webClientId as string | undefined;
   return (
     (import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined) ||
+    configClientId ||
     GOOGLE_WEB_CLIENT_PLACEHOLDER
   );
 }
