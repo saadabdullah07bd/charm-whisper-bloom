@@ -273,7 +273,7 @@ const Index: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-8">
+        <main ref={swipeRef} className="flex-1 overflow-y-auto pb-20 md:pb-8">
           <div className="mx-auto w-full max-w-[1520px]">
             {renderContent()}
           </div>
