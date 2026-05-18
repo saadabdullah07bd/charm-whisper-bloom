@@ -11,11 +11,12 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cap:sync": "vite build && cap sync android",
-    "cap:add:android": "cap add android",
+    "cap:patch-main": "node scripts/patch-android-main-activity.mjs",
+    "cap:sync": "vite build && cap sync android && bun run cap:patch-main",
+    "cap:add:android": "cap add android && bun run cap:patch-main",
     "cap:open:android": "cap open android",
-    "android:build": "vite build && cap sync android && cd android && ./gradlew assembleDebug",
-    "android:release": "vite build && cap sync android && cd android && ./gradlew assembleRelease"
+    "android:build": "vite build && cap sync android && bun run cap:patch-main && cd android && ./gradlew assembleDebug",
+    "android:release": "vite build && cap sync android && bun run cap:patch-main && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",
