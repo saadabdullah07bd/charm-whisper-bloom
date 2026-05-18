@@ -664,12 +664,8 @@ const PatientDashboard: React.FC = () => {
       <div className="flex">
         {/* ── Desktop Sidebar (md+) ── */}
         <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 border-r border-border/30" style={{ background: 'hsl(var(--card)/0.5)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
-          <div className="p-5 pb-3 flex items-center gap-3">
-            <img src="/favicon.png" alt="MedHelp" className="w-9 h-9 rounded-full flex-shrink-0" />
-            <div className="min-w-0">
-              <h1 className="text-lg font-medium tracking-tight truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</h1>
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">{t('patient.dashboard')}</p>
-            </div>
+          <div className="p-5 pb-3">
+            <h1 className="text-lg font-medium tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</h1>
           </div>
 
           <nav className="flex-1 px-3 py-1 relative">
@@ -718,22 +714,8 @@ const PatientDashboard: React.FC = () => {
         <div className="flex-1 min-w-0">
       {/* ── Mobile Glass Header ── */}
       <header className="md:hidden sticky top-0 z-30 border-b border-border/20" style={{ background: 'hsl(var(--background)/0.6)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
-        <div className="max-w-lg mx-auto px-5 h-[68px] flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-sm overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(var(--primary)/0.15), hsl(var(--primary)/0.05))', backdropFilter: 'blur(10px)' }}>
-              {patient.avatarUrl ? (
-                <img src={patient.avatarUrl} alt={patient.name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-lg font-bold text-primary">{patient.name.charAt(0)}</span>
-              )}
-            </div>
-            <div>
-              <h1 className="text-[15px] font-semibold leading-tight tracking-[-0.01em]">{patient.name}</h1>
-              <p className="text-[11px] text-muted-foreground leading-tight mt-0.5 tracking-wide uppercase">{t('patient.dashboard')}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1" />
-
+        <div className="max-w-lg mx-auto px-5 h-[60px] flex items-center justify-center">
+          <h1 className="text-[18px] font-semibold tracking-[-0.01em]" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</h1>
         </div>
       </header>
 
@@ -1167,17 +1149,14 @@ const AppointmentsSection: React.FC<{
           {(['pending', 'confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status)) && props.cancellingAptId !== apt.id && (
             <div className="flex flex-wrap gap-2 pt-0.5">
               {['confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status) && (() => {
-                const w = getJoinWindowState(apt.appointment_date, apt.time_slot);
-                if (w.ended || !w.canJoin) return null;
-                // Join button only appears within the 30-min window starting at
-                // the appointment time. Doctor can end the session early, which
-                // moves status to 'completed' and removes this button.
+                const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(), { status: apt.status });
+                if (!w.canJoin) return null;
                 return (
                   <button
                     onClick={() => handleJoinCall(apt)}
-                    className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all text-white"
-                    style={{ background: 'hsl(152 69% 31%)' }}>
-                    📹 {apt.status === 'confirmed' ? 'Join Video Call' : 'Rejoin Call'}
+                    className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all text-white shadow-sm"
+                    style={{ background: 'linear-gradient(135deg, hsl(152 69% 35%), hsl(174 72% 38%))' }}>
+                    📹 {apt.status === 'confirmed' ? 'Join your appointment' : 'Rejoin your appointment'}
                   </button>
                 );
               })()}

@@ -6,9 +6,17 @@ import DailyIframe, { type DailyCall } from '@daily-co/daily-js';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { getDailyJoin } from '@/lib/dailyRoom';
+import { toast } from 'sonner';
 
 function getFallbackPath(role: 'doctor' | 'patient' | null) {
   return role === 'patient' ? '/patient/appointments' : '/dashboard/appointments';
+}
+
+/** Internal: classify meeting quality from a duration. */
+function classifyMeetingQuality(durationMs: number, bothJoined: boolean): 'completed' | 'short' | 'failed' {
+  if (!bothJoined) return 'failed';
+  if (durationMs >= 10 * 60 * 1000) return 'completed';
+  return 'short';
 }
 
 export default function VideoCallPage() {
@@ -18,8 +26,11 @@ export default function VideoCallPage() {
   const { role, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDoctorPrompt, setShowDoctorPrompt] = useState(false);
+  const [promptBusy, setPromptBusy] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
+  const joinedAtRef = useRef<number | null>(null);
 
   const closeToAppointments = useCallback(() => {
     navigate(getFallbackPath(role), { replace: true });
@@ -40,6 +51,52 @@ export default function VideoCallPage() {
   useEffect(() => {
     document.title = `${t('video.title')} — MedHelp`;
   }, [t]);
+
+  // ── Doctor post-call actions ──
+  const finishSession = async () => {
+    if (!appointmentId) return;
+    setPromptBusy(true);
+    const durationMs = joinedAtRef.current ? Date.now() - joinedAtRef.current : 0;
+    const { data: row } = await supabase
+      .from('appointments')
+      .select('patient_joined_at')
+      .eq('id', appointmentId)
+      .maybeSingle();
+    const bothJoined = !!(row as any)?.patient_joined_at;
+    const quality = classifyMeetingQuality(durationMs, bothJoined);
+    await supabase.from('appointments').update({
+      status: 'completed',
+      session_ended_at: new Date().toISOString(),
+      session_ended_by: 'doctor',
+      meeting_quality: quality,
+      updated_at: new Date().toISOString(),
+    } as never).eq('id', appointmentId);
+    toast.success('Session ended');
+    setPromptBusy(false);
+    closeToAppointments();
+  };
+
+  const askPatientToRejoin = async () => {
+    if (!appointmentId) return;
+    setPromptBusy(true);
+    // Keep status so the join window stays open; flag quality as needing follow-up.
+    await supabase.from('appointments').update({
+      status: 'awaiting_prescription',
+      meeting_quality: 'needs_rejoin',
+      updated_at: new Date().toISOString(),
+    } as never).eq('id', appointmentId);
+    // Log a patient-facing notification for the dashboard to surface.
+    await (supabase as any).from('notification_logs').insert({
+      type: 'rejoin_request',
+      channel: 'in_app',
+      recipient: appointmentId,
+      message: 'Your meeting has not been completed yet. Please join again.',
+      status: 'sent',
+    });
+    toast.success('Patient asked to rejoin');
+    setPromptBusy(false);
+    closeToAppointments();
+  };
 
   useEffect(() => {
     if (!appointmentId || roleLoading || !role || !containerRef.current) {
@@ -79,22 +136,34 @@ export default function VideoCallPage() {
         callRef.current = call;
 
         call.on('joined-meeting', async () => {
+          joinedAtRef.current = Date.now();
+          const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
           if (role === 'doctor') {
-            await supabase.from('appointments').update({
-              status: 'in_call',
-              updated_at: new Date().toISOString(),
-            } as never).eq('id', appointmentId);
+            patch.status = 'in_call';
+            patch.doctor_joined_at = new Date().toISOString();
+          } else {
+            patch.patient_joined_at = new Date().toISOString();
           }
+          await supabase.from('appointments').update(patch as never).eq('id', appointmentId);
         });
 
         call.on('left-meeting', async () => {
+          const leftField = role === 'doctor' ? 'doctor_left_at' : 'patient_left_at';
+          const patch: Record<string, unknown> = {
+            [leftField]: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
           if (role === 'doctor') {
-            await supabase.from('appointments').update({
-              status: 'awaiting_prescription',
-              updated_at: new Date().toISOString(),
-            } as never).eq('id', appointmentId);
+            patch.status = 'awaiting_prescription';
           }
-          closeToAppointments();
+          await supabase.from('appointments').update(patch as never).eq('id', appointmentId);
+
+          if (role === 'doctor') {
+            // Don't auto-close yet — show the "Was the meeting completed?" prompt.
+            setShowDoctorPrompt(true);
+          } else {
+            closeToAppointments();
+          }
         });
 
         call.on('error', (event: unknown) => {
@@ -139,7 +208,7 @@ export default function VideoCallPage() {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-6 text-center">
         <div className="glass-card max-w-md p-6">
-          <p className="text-sm text-muted-foreground">Appointment পাওয়া যায়নি।</p>
+          <p className="text-sm text-muted-foreground">Appointment পাওয়া যায়নি।</p>
         </div>
       </div>
     );
@@ -168,6 +237,44 @@ export default function VideoCallPage() {
               >
                 {t('video.backToAppointments')}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Doctor post-call prompt */}
+        {showDoctorPrompt && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/90 px-6">
+            <div className="glass-card w-full max-w-md space-y-5 p-6">
+              <div className="space-y-1.5 text-center">
+                <h2 className="text-lg font-semibold">Was the meeting completed?</h2>
+                <p className="text-xs text-muted-foreground">
+                  Choose what to do next. The patient sees only your choice.
+                </p>
+              </div>
+              <div className="grid gap-2">
+                <button
+                  disabled={promptBusy}
+                  onClick={finishSession}
+                  className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-sm transition disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg, hsl(152 69% 35%), hsl(174 72% 38%))' }}
+                >
+                  Yes — end session
+                </button>
+                <button
+                  disabled={promptBusy}
+                  onClick={askPatientToRejoin}
+                  className="w-full rounded-xl px-4 py-3 text-sm font-semibold border border-border bg-card hover:bg-muted/40 transition disabled:opacity-60"
+                >
+                  No — ask patient to rejoin
+                </button>
+                <button
+                  disabled={promptBusy}
+                  onClick={closeToAppointments}
+                  className="w-full text-xs text-muted-foreground py-2 hover:text-foreground"
+                >
+                  Just close
+                </button>
+              </div>
             </div>
           </div>
         )}

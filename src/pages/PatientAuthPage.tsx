@@ -3,18 +3,18 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sun, Moon, Monitor } from "lucide-react";
 import { setPageMeta } from "@/lib/pageMeta";
 import medhelpLogo from "@/assets/medhelp-logo.png";
 import { signInWithGoogleNative } from "@/lib/nativeAuth";
+import { useTheme } from "@/hooks/useTheme";
+import { LANG_STORAGE_KEY } from "@/lib/i18n";
 
-interface Props {
-  onSwitchToDoctor?: () => void;
-}
-
-const PatientAuthPage: React.FC<Props> = (_props) => {
+const PatientAuthPage: React.FC<{ onSwitchToDoctor?: () => void }> = () => {
   const [loading, setLoading] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const [theme, setTheme] = useTheme();
+  const currentLang = (i18n.language?.startsWith('en') ? 'en' : 'bn') as 'bn' | 'en';
 
   useEffect(() => {
     setPageMeta({
@@ -24,10 +24,17 @@ const PatientAuthPage: React.FC<Props> = (_props) => {
     });
   }, []);
 
+  const cycleTheme = () => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light');
+  const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
+  const toggleLang = () => {
+    const next = currentLang === 'bn' ? 'en' : 'bn';
+    i18n.changeLanguage(next);
+    try { localStorage.setItem(LANG_STORAGE_KEY, next); } catch { /* ignore */ }
+  };
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      // Native in-app Google sign-in on Android/iOS, OAuth redirect on web.
       await signInWithGoogleNative();
     } catch (err: any) {
       console.error("[handleGoogleLogin]", err);
@@ -37,13 +44,28 @@ const PatientAuthPage: React.FC<Props> = (_props) => {
     }
   };
 
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
+      {/* Top-right controls: theme + language */}
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+        <button
+          onClick={cycleTheme}
+          aria-label={`Theme: ${theme}`}
+          className="w-9 h-9 rounded-full border border-border/60 bg-card/60 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground transition">
+          <ThemeIcon size={15} />
+        </button>
+        <button
+          onClick={toggleLang}
+          aria-label="Toggle language"
+          className="h-9 px-3 rounded-full border border-border/60 bg-card/60 backdrop-blur text-xs font-semibold text-foreground hover:bg-card transition">
+          {currentLang === 'bn' ? 'বাং' : 'EN'}
+        </button>
+      </div>
+
       <div className="w-full max-w-md" style={{ animation: 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
         <Card className="overflow-hidden">
           <CardHeader className="text-center items-center">
-            <img src={medhelpLogo} alt="MedHelp" className="w-16 h-16 rounded-full mb-2" />
+            <img src={medhelpLogo} alt="MedHelp" className="w-16 h-16 rounded-2xl mb-2 shadow-lg" />
             <h1 className="text-2xl font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>{t('auth.portalTitle')}</h1>
             <CardDescription>{t('auth.portalDesc')}</CardDescription>
           </CardHeader>

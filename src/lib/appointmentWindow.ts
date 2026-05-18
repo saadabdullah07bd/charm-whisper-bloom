@@ -1,6 +1,7 @@
 // Helpers for the time window during which the video call can be joined.
 
 export const JOIN_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+export const REMINDER_LEAD_MS = 10 * 60 * 1000; // 10 minutes before start
 
 export function parseAppointmentDateTime(date: string, time: string): Date | null {
   const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
@@ -16,32 +17,60 @@ export function parseAppointmentDateTime(date: string, time: string): Date | nul
 }
 
 export interface JoinWindowState {
-  /** Currently inside the join window. */
+  /** Currently inside the join window AND session not manually ended. */
   canJoin: boolean;
-  /** Window has already passed. */
+  /** Window already passed OR doctor ended session early. */
   ended: boolean;
+  /** Session was explicitly ended early by the doctor. */
+  endedEarly: boolean;
   /** ms until the window opens (>0 if still in the future). */
   msUntilStart: number;
-  /** Human-readable label e.g. "Available in 12 min" / "Call ended". */
+  /** Inside the 10-min pre-call reminder window. */
+  isReminderTime: boolean;
+  /** Human-readable label e.g. "Starts in 12 min" / "Session ended". */
   label: string;
 }
 
-export function getJoinWindowState(date: string, time: string, now: Date = new Date()): JoinWindowState {
+/**
+ * Compute the full session-window state. Pass the appointment row's
+ * `session_ended_at` / `status` to honour an early "End Session".
+ */
+export function getJoinWindowState(
+  date: string,
+  time: string,
+  now: Date = new Date(),
+  options: { sessionEndedAt?: string | null; status?: string | null } = {},
+): JoinWindowState {
   const start = parseAppointmentDateTime(date, time);
-  if (!start) return { canJoin: false, ended: false, msUntilStart: 0, label: '' };
+  if (!start) {
+    return { canJoin: false, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime: false, label: '' };
+  }
   const startMs = start.getTime();
   const endMs = startMs + JOIN_WINDOW_MS;
   const nowMs = now.getTime();
+
+  const manuallyEnded =
+    !!options.sessionEndedAt ||
+    options.status === 'completed' ||
+    options.status === 'ended_early' ||
+    options.status === 'cancelled' ||
+    options.status === 'rejected';
+
+  if (manuallyEnded) {
+    return { canJoin: false, ended: true, endedEarly: !!options.sessionEndedAt, msUntilStart: 0, isReminderTime: false, label: 'Session ended' };
+  }
+
   if (nowMs < startMs) {
     const mins = Math.ceil((startMs - nowMs) / 60000);
+    const isReminderTime = startMs - nowMs <= REMINDER_LEAD_MS;
     const label = mins >= 60
-      ? `Available in ${Math.floor(mins / 60)}h ${mins % 60}m`
-      : `Available in ${mins} min`;
-    return { canJoin: false, ended: false, msUntilStart: startMs - nowMs, label };
+      ? `Starts in ${Math.floor(mins / 60)}h ${mins % 60}m`
+      : `Starts in ${mins} min`;
+    return { canJoin: false, ended: false, endedEarly: false, msUntilStart: startMs - nowMs, isReminderTime, label };
   }
   if (nowMs <= endMs) {
     const remaining = Math.ceil((endMs - nowMs) / 60000);
-    return { canJoin: true, ended: false, msUntilStart: 0, label: `Join now · ${remaining} min left` };
+    return { canJoin: true, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime: false, label: `Live · ${remaining} min remaining` };
   }
-  return { canJoin: false, ended: true, msUntilStart: 0, label: 'Call ended' };
+  return { canJoin: false, ended: true, endedEarly: false, msUntilStart: 0, isReminderTime: false, label: 'Session ended' };
 }

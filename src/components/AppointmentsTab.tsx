@@ -98,11 +98,14 @@ const AppointmentsTab: React.FC = () => {
   };
 
   // Doctor manually ends a session early — closes the re-join window so the
-  // patient can't rejoin within the remaining 30-min slot.
+  // patient can't rejoin within the remaining 30-min slot. Sets session_ended_at
+  // so getJoinWindowState() will hide the Join button instantly for everyone.
   const handleEndSession = async (apt: Appointment) => {
     if (!window.confirm(t('apptTab.endSessionConfirm'))) return;
     const { error } = await supabase.from('appointments').update({
       status: 'completed',
+      session_ended_at: new Date().toISOString(),
+      session_ended_by: 'doctor',
       updated_at: new Date().toISOString(),
     } as any).eq('id', apt.id);
     if (error) { toast.error(t('apptTab.sessionEndFailed')); return; }
@@ -373,17 +376,17 @@ const AppointmentsTab: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-lg font-display font-bold flex items-center gap-2">
-          <Calendar size={18} /> Appointments
+    <div className="space-y-4 min-w-0">
+      <div className="flex items-center justify-between flex-wrap gap-2 min-w-0">
+        <h2 className="text-lg font-display font-bold flex items-center gap-2 min-w-0">
+          <Calendar size={18} className="shrink-0" /> <span className="truncate">Appointments</span>
           {pendingCount > 0 && (
-            <span className="ml-2 inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full bg-destructive text-destructive-foreground">
+            <span className="ml-2 inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full bg-destructive text-destructive-foreground shrink-0">
               {pendingCount}
             </span>
           )}
         </h2>
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
           {filters.map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 btn-press ${filter === f.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
@@ -474,23 +477,25 @@ const AppointmentsTab: React.FC = () => {
                       </>
                     )}
                      {['confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status) && (() => {
-                       const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(nowTick));
-                       if (w.ended || !w.canJoin) return null;
+                       const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(nowTick), { status: apt.status });
+                       if (!w.canJoin) return null;
                        return (
                          <button onClick={() => handleJoinCall(apt)}
-                           title={apt.status === 'confirmed' ? 'Join Video Call' : 'Rejoin Call'}
-                           className="h-8 px-2 rounded-lg flex items-center gap-1 btn-press bg-emerald-500 text-white hover:bg-emerald-600">
-                           <Video size={14} /> <span className="text-[11px] font-medium">{apt.status === 'confirmed' ? 'Join' : 'Rejoin'}</span>
+                           title="Start your appointment"
+                           className="h-8 px-3 rounded-lg flex items-center gap-1.5 btn-press text-white shadow-sm"
+                           style={{ background: 'linear-gradient(135deg, hsl(152 69% 35%), hsl(174 72% 38%))' }}>
+                           <Video size={14} /> <span className="text-[11px] font-semibold whitespace-nowrap">Start appointment</span>
                          </button>
                        );
                      })()}
-                    {['in_call', 'awaiting_prescription'].includes(apt.status) && (() => {
-                      const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(nowTick));
-                      if (w.ended) return null;
+                    {['confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status) && (() => {
+                      const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(nowTick), { status: apt.status });
+                      // End Session only visible while the 30-min window is open.
+                      if (!w.canJoin) return null;
                       return (
-                        <button onClick={() => handleEndSession(apt)} title="End session (close re-join)"
+                        <button onClick={() => handleEndSession(apt)} title="End session (close re-join window)"
                           className="h-8 px-2 rounded-lg flex items-center gap-1 btn-press bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600">
-                          <X size={14} /> <span className="text-[11px] font-medium">End</span>
+                          <X size={14} /> <span className="text-[11px] font-medium">End session</span>
                         </button>
                       );
                     })()}
