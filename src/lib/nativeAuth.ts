@@ -32,9 +32,13 @@ export async function signInWithGoogleNative() {
   }
 
   await initNativeAuth();
+  // NOTE: Do NOT pass custom `scopes` here — @capgo/capacitor-social-login
+  // requires modifying MainActivity for extra scopes and will throw
+  // "You cannot use scopes without modifying the main activity".
+  // The default Google sign-in already returns email + profile + idToken.
   const res = await SocialLogin.login({
     provider: 'google',
-    options: { scopes: ['email', 'profile'] },
+    options: {},
   });
 
   // @capgo/capacitor-social-login returns { result: { idToken, accessToken, ... } }
