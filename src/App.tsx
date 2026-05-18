@@ -10,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import VideoCallPage from "./pages/VideoCallPage";
+import NativeStatusBarSync from "./components/NativeStatusBarSync";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
     <TooltipProvider>
+      <NativeStatusBarSync />
       <Toaster />
       <Sonner />
       <BrowserRouter>
