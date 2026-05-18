@@ -98,11 +98,14 @@ const AppointmentsTab: React.FC = () => {
   };
 
   // Doctor manually ends a session early — closes the re-join window so the
-  // patient can't rejoin within the remaining 30-min slot.
+  // patient can't rejoin within the remaining 30-min slot. Sets session_ended_at
+  // so getJoinWindowState() will hide the Join button instantly for everyone.
   const handleEndSession = async (apt: Appointment) => {
     if (!window.confirm(t('apptTab.endSessionConfirm'))) return;
     const { error } = await supabase.from('appointments').update({
       status: 'completed',
+      session_ended_at: new Date().toISOString(),
+      session_ended_by: 'doctor',
       updated_at: new Date().toISOString(),
     } as any).eq('id', apt.id);
     if (error) { toast.error(t('apptTab.sessionEndFailed')); return; }
