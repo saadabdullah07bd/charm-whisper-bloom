@@ -175,14 +175,11 @@ const Index: React.FC = () => {
     <div className="flex min-h-screen bg-transparent">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 glass-sidebar border-r border-border/30">
-        <div className="p-5 pb-3 flex items-center gap-3">
-          <img src="/favicon.png" alt="MedHelp" className="w-9 h-9 rounded-full flex-shrink-0" />
-          <div className="min-w-0">
-            <h1 className="text-lg font-medium tracking-tight truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</h1>
-            <p className="text-xs text-muted-foreground mt-0.5 truncate">
-              {doctorSettings.name || 'Medical Practice Management'}
-            </p>
-          </div>
+        <div className="p-5 pb-3">
+          <h1 className="text-lg font-medium tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</h1>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+            {doctorSettings.name || 'Medical Practice Management'}
+          </p>
         </div>
 
         <div className="px-3 pb-2">
@@ -254,14 +251,11 @@ const Index: React.FC = () => {
       <div className="flex-1 min-w-0 flex flex-col min-h-screen">
         {/* Mobile Header */}
         <header className="md:hidden sticky top-0 z-30 glass-header border-b border-border/50 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <img src="/favicon.png" alt="MedHelp" className="w-8 h-8 rounded-full flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="text-base font-medium truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</p>
-              <p className="text-[11px] text-muted-foreground truncate">
-                {doctorSettings.name || 'Medical Practice Management'}
-              </p>
-            </div>
+          <div className="min-w-0">
+            <p className="text-base font-semibold truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {doctorSettings.name || 'Medical Practice Management'}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <button
