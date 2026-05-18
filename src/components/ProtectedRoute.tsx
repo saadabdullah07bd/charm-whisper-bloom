@@ -37,11 +37,7 @@ const ProtectedRoute: React.FC<Props> = ({ children }) => {
   }, []);
 
   if (loading || (session && roleLoading)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <BrandedSpinner fullscreen label="Loading…" />;
   }
 
   if (!session) {
