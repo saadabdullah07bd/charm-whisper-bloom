@@ -46,12 +46,12 @@ const Index: React.FC = () => {
   const swipeRef = useSwipeNavigation<HTMLElement>({
     enabled: !selectedPatient,
     onSwipeLeft: () => {
-      const i = tabs.findIndex(x => x.key === tab);
-      if (i >= 0 && i < tabs.length - 1) setTab(tabs[i + 1].key);
+      const i = VALID_TABS.indexOf(tab);
+      if (i >= 0 && i < VALID_TABS.length - 1) setTab(VALID_TABS[i + 1]);
     },
     onSwipeRight: () => {
-      const i = tabs.findIndex(x => x.key === tab);
-      if (i > 0) setTab(tabs[i - 1].key);
+      const i = VALID_TABS.indexOf(tab);
+      if (i > 0) setTab(VALID_TABS[i - 1]);
     },
   });
 
