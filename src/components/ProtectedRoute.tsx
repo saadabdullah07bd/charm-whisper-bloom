@@ -6,7 +6,7 @@ import PatientAuthPage from "@/pages/PatientAuthPage";
 import PatientDashboard from "@/pages/PatientDashboard";
 import WelcomeOnboarding from "@/components/WelcomeOnboarding";
 import { isWelcomeDone } from "@/lib/welcomePrefs";
-import { Loader2 } from "lucide-react";
+import BrandedSpinner from "@/components/BrandedSpinner";
 import { useLocation } from "react-router-dom";
 
 interface Props {
