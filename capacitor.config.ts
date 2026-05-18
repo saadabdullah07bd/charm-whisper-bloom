@@ -1,0 +1,32 @@
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.medhelp.app',
+  appName: 'MedHelp',
+  webDir: 'dist',
+  android: {
+    allowMixedContent: true,
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 1500,
+      backgroundColor: '#ffffff',
+      androidSplashResourceName: 'splash',
+      showSpinner: false,
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    SocialLogin: {
+      // Fill in from Google Cloud Console → OAuth 2.0 Client IDs
+      // webClientId = the "Web application" client ID (used by Supabase too)
+      // Android automatically uses the Android OAuth client (SHA-1 matched) — no androidClientId field needed.
+      google: {
+        webClientId: 'REPLACE_WITH_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+        mode: 'online',
+      },
+    },
+  },
+};
+
+export default config;
