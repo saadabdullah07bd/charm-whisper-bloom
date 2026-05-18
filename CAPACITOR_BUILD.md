@@ -57,6 +57,8 @@ bun run cap:add:android
 
 This creates the `android/` folder. Commit it.
 
+The script also patches `android/app/src/main/java/.../MainActivity.java` so Google Sign-In can receive the native authorization result after account selection. Without this patch Android may show `Google Sign-In cancelled by user` even when the user selected an account.
+
 ## 5. Build the APK
 
 Every time you change web code:
@@ -86,7 +88,8 @@ bun run cap:open:android
 | `bun dev`               | Web dev server                                          |
 | `bun run build`         | Web production build → `dist/`                          |
 | `bun run cap:add:android` | Adds the native `android/` project (run once)         |
-| `bun run cap:sync`      | Builds web + copies into `android/`                     |
+| `bun run cap:patch-main` | Patches Android `MainActivity.java` for Google Sign-In |
+| `bun run cap:sync`      | Builds web + copies into `android/`, then patches MainActivity |
 | `bun run cap:open:android` | Opens the native project in Android Studio           |
 | `bun run android:build` | Full build + assemble **debug** APK                     |
 | `bun run android:release` | Full build + assemble **release** APK                 |
