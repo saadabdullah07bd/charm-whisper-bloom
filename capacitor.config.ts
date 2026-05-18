@@ -9,10 +9,16 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 1500,
+      launchShowDuration: 800,
+      // Auto-light/dark via Android night-resources (see colors.xml notes in CAPACITOR_BUILD.md)
       backgroundColor: '#ffffff',
       androidSplashResourceName: 'splash',
       showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
+    StatusBar: {
+      style: 'DEFAULT', // follows system; we also sync dynamically at runtime
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
