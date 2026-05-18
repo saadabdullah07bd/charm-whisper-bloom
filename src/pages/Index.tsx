@@ -16,6 +16,7 @@ import SettingsPage from './SettingsPage';
 import SearchModal from '@/components/SearchModal';
 import AppointmentsTab from '@/components/AppointmentsTab';
 import MobileBottomTabs from '@/components/MobileBottomTabs';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 
 type Tab = 'dashboard' | 'patients' | 'history' | 'appointments' | 'settings';
 
@@ -42,6 +43,17 @@ const Index: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [theme, setTheme] = useTheme();
   const [stageFilter, setStageFilter] = useState<string>('');
+  const swipeRef = useSwipeNavigation<HTMLElement>({
+    enabled: !selectedPatient,
+    onSwipeLeft: () => {
+      const i = VALID_TABS.indexOf(tab);
+      if (i >= 0 && i < VALID_TABS.length - 1) setTab(VALID_TABS[i + 1]);
+    },
+    onSwipeRight: () => {
+      const i = VALID_TABS.indexOf(tab);
+      if (i > 0) setTab(VALID_TABS[i - 1]);
+    },
+  });
 
   useEffect(() => {
     const labels: Record<string, { title: string; desc: string; path: string }> = {
@@ -273,7 +285,7 @@ const Index: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-8">
+        <main ref={swipeRef} className="flex-1 overflow-y-auto pb-20 md:pb-8">
           <div className="mx-auto w-full max-w-[1520px]">
             {renderContent()}
           </div>
