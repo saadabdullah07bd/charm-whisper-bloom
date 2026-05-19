@@ -1189,18 +1189,6 @@ const AppointmentsSection: React.FC<{
                     </button>
                   );
                 }
-                // Test mode — available anytime for confirmed appointments so users can verify camera/mic.
-                if (apt.status === 'confirmed') {
-                  return (
-                    <button
-                      onClick={() => handleJoinCall(apt)}
-                      title="Test camera, microphone and connection before your appointment"
-                      className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all border border-primary/30 text-primary"
-                      style={{ background: 'hsl(var(--primary)/0.06)' }}>
-                      🎥 Test call
-                    </button>
-                  );
-                }
                 return null;
               })()}
               {canPatientModifyAppointment(apt) && (
