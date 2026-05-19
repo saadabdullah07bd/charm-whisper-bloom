@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, TouchEvent as ReactTou
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, User, Stethoscope, FileText, FlaskConical, Upload, Download, Eye, EyeOff, Loader2, Sun, Moon, Monitor, CalendarPlus, Calendar, Clock, X, RefreshCw, ChevronRight, Plus, Bell, Printer, ArrowLeft, Share2, FolderOpen, Pill, KeyRound, Save, Settings as SettingsIcon, LayoutGrid } from 'lucide-react';
+import { LogOut, User, Stethoscope, FileText, FlaskConical, Upload, Download, Eye, EyeOff, Loader2, Sun, Moon, Monitor, CalendarPlus, Calendar, Clock, X, RefreshCw, ChevronRight, Plus, Bell, Printer, ArrowLeft, Share2, FolderOpen, Pill, KeyRound, Save, Settings as SettingsIcon, LayoutGrid, Globe, Check } from 'lucide-react';
 import MobileBottomTabs from '@/components/MobileBottomTabs';
 import PatientUserManual from '@/components/PatientUserManual';
 import AvatarCropperModal from '@/components/AvatarCropperModal';
