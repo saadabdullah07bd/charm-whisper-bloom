@@ -658,14 +658,7 @@ const PatientDashboard: React.FC = () => {
   const maxDateStr = new Date(today.getTime() + 12 * 86400000).toISOString().split('T')[0];
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <p className="text-xs text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
+    return <BrandedSpinner fullscreen label="Loading…" />;
   }
 
   if (showRegForm || !patient) {
