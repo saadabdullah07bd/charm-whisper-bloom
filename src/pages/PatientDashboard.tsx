@@ -444,11 +444,16 @@ const PatientDashboard: React.FC = () => {
       if (patientEmail) {
         sendAppointmentEmail({ type: 'booking_received', to: patientEmail, patientName: patient.name, date: bookingDate, time: bookingSlot });
       }
+      // Push to patient (own device) — confirms request was received even offline later
+      const { data: { user: bookUser } } = await supabase.auth.getUser();
+      notifyUser(bookUser?.id, 'Appointment requested', `${bookingDate} • ${bookingSlot} — awaiting doctor approval`, { aptId: insertedApt?.id ?? '' });
       // Notify doctor about new appointment request with action buttons
       const doctorEmail = await getDoctorEmail();
       if (doctorEmail && insertedApt) {
         sendAppointmentEmail({ type: 'new_appointment_request', to: doctorEmail, patientName: patient.name, date: bookingDate, time: bookingSlot, appointmentId: insertedApt.id });
       }
+      const doctorUid = await getDoctorUserId();
+      notifyUser(doctorUid, 'New appointment request', `${patient.name} — ${bookingDate} ${bookingSlot}`, { aptId: insertedApt?.id ?? '' });
     }
     setBookingSubmitting(false);
   };
