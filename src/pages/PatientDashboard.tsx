@@ -761,8 +761,9 @@ const PatientDashboard: React.FC = () => {
               reschedulingId={reschedulingId}
               rescheduleDate={rescheduleDate} setRescheduleDate={(d) => { setRescheduleDate(d); loadSlots(d, 'reschedule'); }}
               rescheduleSlot={rescheduleSlot} setRescheduleSlot={setRescheduleSlot}
+              rescheduleReason={rescheduleReason} setRescheduleReason={setRescheduleReason}
               rescheduleBookedSlots={rescheduleBookedSlots}
-              onConfirmReschedule={confirmReschedule} onCancelReschedule={() => setReschedulingId(null)}
+              onConfirmReschedule={confirmReschedule} onCancelReschedule={() => { setReschedulingId(null); setRescheduleReason(''); }}
               todayStr={todayStr} maxDateStr={maxDateStr}
             />
           )}
