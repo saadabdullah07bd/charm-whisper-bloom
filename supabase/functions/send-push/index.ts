@@ -82,6 +82,16 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
+    // Auth: only trusted internal callers (edge functions, cron) bearing the
+    // service-role key may invoke this. Prevents arbitrary public push spam.
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const bearer = authHeader.toLowerCase().startsWith('bearer ')
+      ? authHeader.slice(7).trim() : '';
+    if (!SERVICE_ROLE || bearer !== SERVICE_ROLE) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     if (!FCM_SA_JSON) {
       return new Response(JSON.stringify({ error: 'FCM_SERVICE_ACCOUNT_JSON not set' }), {
         status: 503,
