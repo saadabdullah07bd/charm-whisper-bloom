@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
 
   const { data: rows, error } = await supabase
     .from("appointments")
-    .select("id, patient_name, patient_email, appointment_date, time_slot, status, meet_reminder_sent_at, google_meet_link")
+    .select("id, patient_id, patient_name, patient_email, appointment_date, time_slot, status, meet_reminder_sent_at, google_meet_link")
     .in("appointment_date", [today, tomorrow])
     .eq("status", "confirmed")
     .is("meet_reminder_sent_at", null);
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
 
   const { data: doctor } = await supabase
     .from("doctor_settings")
-    .select("email, name")
+    .select("email, name, user_id")
     .limit(1)
     .maybeSingle();
 
@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
       recipients.push({ to: doctor.email, name: doctor.name || "Doctor", isDoctor: true });
     }
 
+    // Emails
     for (const r of recipients) {
       try {
         await supabase.functions.invoke("send-appointment-email", {
@@ -90,6 +91,28 @@ Deno.serve(async (req) => {
         });
       } catch (e) {
         console.error("reminder email failed", apt.id, r.to, e);
+      }
+    }
+
+    // Native pushes (works when app is fully killed)
+    const pushTargets: string[] = [];
+    if (apt.patient_id) {
+      const { data: p } = await supabase.from("patients").select("user_id").eq("id", apt.patient_id).maybeSingle();
+      if (p?.user_id) pushTargets.push(p.user_id as string);
+    }
+    if (doctor?.user_id) pushTargets.push(doctor.user_id as string);
+    for (const uid of pushTargets) {
+      try {
+        await supabase.functions.invoke("send-push", {
+          body: {
+            userId: uid,
+            title: "📞 Appointment in 10 minutes",
+            body: `${apt.patient_name} • ${apt.time_slot}. Tap to join.`,
+            data: { aptId: apt.id, type: "meeting_reminder" },
+          },
+        });
+      } catch (e) {
+        console.error("reminder push failed", apt.id, uid, e);
       }
     }
 
