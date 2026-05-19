@@ -61,12 +61,19 @@ export function getJoinWindowState(
   }
 
   if (nowMs < startMs) {
-    const mins = Math.ceil((startMs - nowMs) / 60000);
-    const isReminderTime = startMs - nowMs <= REMINDER_LEAD_MS;
+    const msUntil = startMs - nowMs;
+    const mins = Math.ceil(msUntil / 60000);
+    const isReminderTime = msUntil <= REMINDER_LEAD_MS;
+    // Open the join window up to 24 hours before the scheduled start so
+    // doctor and patient can connect early (covers same-day testing).
+    if (msUntil <= 24 * 60 * 60 * 1000) {
+      const remaining = Math.ceil((endMs - nowMs) / 60000);
+      return { canJoin: true, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime, label: `Ready · ${mins} min to start` };
+    }
     const label = mins >= 60
       ? `Starts in ${Math.floor(mins / 60)}h ${mins % 60}m`
       : `Starts in ${mins} min`;
-    return { canJoin: false, ended: false, endedEarly: false, msUntilStart: startMs - nowMs, isReminderTime, label };
+    return { canJoin: false, ended: false, endedEarly: false, msUntilStart: msUntil, isReminderTime, label };
   }
   if (nowMs <= endMs) {
     const remaining = Math.ceil((endMs - nowMs) / 60000);
