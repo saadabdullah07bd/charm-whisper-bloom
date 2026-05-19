@@ -67,7 +67,6 @@ export function getJoinWindowState(
     // Open the join window up to 24 hours before the scheduled start so
     // doctor and patient can connect early (covers same-day testing).
     if (msUntil <= 24 * 60 * 60 * 1000) {
-      const remaining = Math.ceil((endMs - nowMs) / 60000);
       return { canJoin: true, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime, label: `Ready · ${mins} min to start` };
     }
     const label = mins >= 60
