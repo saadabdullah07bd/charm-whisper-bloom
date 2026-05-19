@@ -101,3 +101,25 @@ bun run cap:open:android
 - App ID: `com.medhelp.app` — change in `capacitor.config.ts` **before** `cap add android` if you need a different one.
 - Network: `allowMixedContent: true` is set so Supabase HTTPS endpoints work fine; HTTP-only endpoints would also load if you ever needed them.
 - No browser hop: Google sign-in uses native Play Services and exchanges the ID token via `supabase.auth.signInWithIdToken` — fully in-app.
+
+---
+
+## Video call camera / microphone permissions
+
+The video call uses the in-app WebView. The Android patch script
+(`scripts/patch-android-main-activity.mjs`) automatically:
+
+- Adds `CAMERA`, `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`, `BLUETOOTH_CONNECT`
+  permissions to `AndroidManifest.xml`.
+- Installs a `WebChromeClient.onPermissionRequest` hook in `MainActivity`
+  that translates Daily.co's `getUserMedia()` request into a real Android
+  runtime permission dialog (so users don't see the "tap the lock icon in
+  your browser" message).
+
+The iOS patch script (`scripts/patch-ios-info-plist.mjs`) adds
+`NSCameraUsageDescription`, `NSMicrophoneUsageDescription` and
+`NSPhotoLibraryUsageDescription` to `Info.plist`.
+
+Both run automatically as part of `bun run cap:sync`. If you ever regenerate
+the native projects, just re-run `bun run cap:sync` (or
+`bun run cap:patch`) to re-apply them.
