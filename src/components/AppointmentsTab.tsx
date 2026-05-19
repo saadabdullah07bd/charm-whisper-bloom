@@ -302,6 +302,7 @@ const AppointmentsTab: React.FC = () => {
         reason: cancelReason.trim() || undefined,
       });
     }
+    getPatientUserId(apt.patient_id).then(uid => notifyUser(uid, 'Appointment cancelled by doctor', `${apt.appointment_date} ${apt.time_slot}${cancelReason.trim() ? `\nReason: ${cancelReason.trim()}` : ''}`, { aptId: apt.id }));
     fetchAppointments();
   };
 
