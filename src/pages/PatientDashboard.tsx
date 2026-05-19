@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, TouchEvent as ReactTou
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, User, Stethoscope, FileText, FlaskConical, Upload, Download, Eye, EyeOff, Loader2, Sun, Moon, Monitor, CalendarPlus, Calendar, Clock, X, RefreshCw, ChevronRight, Plus, Bell, Printer, ArrowLeft, Share2, FolderOpen, Pill, KeyRound, Save, Settings as SettingsIcon, LayoutGrid } from 'lucide-react';
+import { LogOut, User, Stethoscope, FileText, FlaskConical, Upload, Download, Eye, EyeOff, Loader2, Sun, Moon, Monitor, CalendarPlus, Calendar, Clock, X, RefreshCw, ChevronRight, Plus, Bell, Printer, ArrowLeft, Share2, FolderOpen, Pill, KeyRound, Save, Settings as SettingsIcon, LayoutGrid, Globe, Check } from 'lucide-react';
 import MobileBottomTabs from '@/components/MobileBottomTabs';
 import PatientUserManual from '@/components/PatientUserManual';
 import AvatarCropperModal from '@/components/AvatarCropperModal';
@@ -1185,15 +1185,29 @@ const AppointmentsSection: React.FC<{
             <div className="flex flex-wrap gap-2 pt-0.5">
               {['confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status) && (() => {
                 const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(), { status: apt.status });
-                if (!w.canJoin) return null;
-                return (
-                  <button
-                    onClick={() => handleJoinCall(apt)}
-                    className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all text-white shadow-sm"
-                    style={{ background: 'linear-gradient(135deg, hsl(152 69% 35%), hsl(174 72% 38%))' }}>
-                    📹 {apt.status === 'confirmed' ? 'Join your appointment' : 'Rejoin your appointment'}
-                  </button>
-                );
+                if (w.canJoin) {
+                  return (
+                    <button
+                      onClick={() => handleJoinCall(apt)}
+                      className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all text-white shadow-sm"
+                      style={{ background: 'linear-gradient(135deg, hsl(152 69% 35%), hsl(174 72% 38%))' }}>
+                      📹 {apt.status === 'confirmed' ? 'Join your appointment' : 'Rejoin your appointment'}
+                    </button>
+                  );
+                }
+                // Test mode — available anytime for confirmed appointments so users can verify camera/mic.
+                if (apt.status === 'confirmed') {
+                  return (
+                    <button
+                      onClick={() => handleJoinCall(apt)}
+                      title="Test camera, microphone and connection before your appointment"
+                      className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all border border-primary/30 text-primary"
+                      style={{ background: 'hsl(var(--primary)/0.06)' }}>
+                      🎥 Test call
+                    </button>
+                  );
+                }
+                return null;
               })()}
               {canPatientModifyAppointment(apt) && (
                 <>
@@ -1712,9 +1726,70 @@ const P_SCALES: { id: 'sm' | 'md' | 'lg'; label: string }[] = [
 
 const PatientSettingsTab: React.FC = () => {
   const { mode, setMode, accent, setAccent, gradient, setGradient, fontScale, setFontScale } = useThemeFull();
+  const { i18n } = useTranslation();
+  const currentLang = (i18n.language?.startsWith('en') ? 'en' : 'bn') as 'bn' | 'en';
+  const setLang = (l: 'bn' | 'en') => {
+    i18n.changeLanguage(l);
+    try { localStorage.setItem('medhelp.lang', l); } catch { /* ignore */ }
+  };
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   return (
     <div className="space-y-5">
+      {/* Quick controls — Language */}
+      <GlassCard className="p-5 space-y-3">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Globe size={16} className="text-primary" /> Language / ভাষা
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          {(['bn', 'en'] as const).map((l) => {
+            const active = currentLang === l;
+            return (
+              <button key={l} onClick={() => setLang(l)}
+                className={cn('flex items-center justify-between rounded-xl border p-3 text-left transition btn-press',
+                  active ? 'border-primary ring-2 ring-primary/30 bg-primary/5' : 'border-border/30 hover:border-foreground/30')}>
+                <span className="text-sm font-semibold">{l === 'bn' ? 'বাংলা' : 'English'}</span>
+                {active && <Check size={14} className="text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      </GlassCard>
+
+      {/* Quick controls — Color mode */}
+      <GlassCard className="p-5 space-y-3">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Sun size={16} className="text-primary" /> Color mode
+        </h3>
+        <div className="grid grid-cols-3 gap-3">
+          {P_MODES.map((m) => {
+            const active = mode === m.id;
+            const Icon = m.icon;
+            return (
+              <button key={m.id} onClick={() => setMode(m.id)}
+                className={cn('flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition btn-press',
+                  active ? 'border-primary ring-2 ring-primary/30 bg-primary/5' : 'border-border/30 hover:border-foreground/30')}>
+                <Icon size={18} />
+                <span className="text-xs font-medium">{m.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </GlassCard>
+
+      {/* Quick controls — Text size */}
+      <GlassCard className="p-5 space-y-3">
+        <h3 className="text-sm font-semibold">Text size</h3>
+        <div className="inline-flex rounded-xl border border-border/30 p-1">
+          {P_SCALES.map((s) => (
+            <button key={s.id} onClick={() => setFontScale(s.id)}
+              className={cn('rounded-lg px-4 py-1.5 text-sm transition btn-press',
+                fontScale === s.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </GlassCard>
+
       {/* Appearance — collapsible */}
       <GlassCard className="p-5">
         <button

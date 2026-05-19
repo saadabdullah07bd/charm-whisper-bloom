@@ -136,28 +136,6 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
         <Settings size={20} /> {t('settings.title')}
       </h1>
 
-      {/* Language selector */}
-      <div className="glass-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold flex items-center gap-1.5">
-          <Globe size={14} /> {t('settings.language')}
-        </h2>
-        <p className="text-xs text-muted-foreground -mt-1">{t('settings.languageDesc')}</p>
-        <div className="grid grid-cols-2 gap-3">
-          {(['bn', 'en'] as const).map((l) => {
-            const active = currentLang === l;
-            return (
-              <button key={l} onClick={() => setLang(l)}
-                className={`flex items-center justify-between rounded-xl border p-3 text-left transition btn-press ${active ? 'border-primary ring-2 ring-primary/30 bg-primary/5' : 'border-border/50 hover:border-foreground/30'}`}>
-                <span className="text-sm font-semibold">
-                  {l === 'bn' ? 'বাংলা' : 'English'}
-                </span>
-                {active && <Check size={14} className="text-primary" />}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Professional Information — single doctor, bilingual */}
       <div className="glass-card p-5 space-y-4">
         <h2 className="text-sm font-semibold flex items-center gap-1.5">
@@ -213,6 +191,29 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
           </div>
         </div>
       </div>
+
+      {/* Language selector */}
+      <div className="glass-card p-5 space-y-3">
+        <h2 className="text-sm font-semibold flex items-center gap-1.5">
+          <Globe size={14} /> {t('settings.language')}
+        </h2>
+        <p className="text-xs text-muted-foreground -mt-1">{t('settings.languageDesc')}</p>
+        <div className="grid grid-cols-2 gap-3">
+          {(['bn', 'en'] as const).map((l) => {
+            const active = currentLang === l;
+            return (
+              <button key={l} onClick={() => setLang(l)}
+                className={`flex items-center justify-between rounded-xl border p-3 text-left transition btn-press ${active ? 'border-primary ring-2 ring-primary/30 bg-primary/5' : 'border-border/50 hover:border-foreground/30'}`}>
+                <span className="text-sm font-semibold">
+                  {l === 'bn' ? 'বাংলা' : 'English'}
+                </span>
+                {active && <Check size={14} className="text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
 
       {/* Letterhead upload */}
       <div className="glass-card p-5 space-y-3">
