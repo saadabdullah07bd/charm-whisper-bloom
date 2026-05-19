@@ -144,6 +144,7 @@ const PatientDashboard: React.FC = () => {
   const [reschedulingId, setReschedulingId] = useState<string | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleSlot, setRescheduleSlot] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
   const [rescheduleBookedSlots, setRescheduleBookedSlots] = useState<string[]>([]);
 
   // Tab slider ref
@@ -472,22 +473,23 @@ const PatientDashboard: React.FC = () => {
 
   const startReschedule = (apt: AppointmentRecord) => {
     if (!canPatientModifyAppointment(apt)) { toast.error('You can reschedule only up to 2 hours before the appointment.'); return; }
-    setReschedulingId(apt.id); setRescheduleDate(''); setRescheduleSlot(''); setCancellingAptId(null);
+    setReschedulingId(apt.id); setRescheduleDate(''); setRescheduleSlot(''); setRescheduleReason(''); setCancellingAptId(null);
   };
 
   const confirmReschedule = async () => {
     if (!reschedulingId || !rescheduleDate || !rescheduleSlot) { toast.error('Select new date and time'); return; }
+    if (!rescheduleReason.trim()) { toast.error('Please provide a reason for rescheduling'); return; }
     const apt = appointments.find(a => a.id === reschedulingId);
-    const { error } = await supabase.from('appointments').update({ status: 'reschedule_requested', reschedule_date: rescheduleDate, reschedule_time_slot: rescheduleSlot, updated_at: new Date().toISOString() } as any).eq('id', reschedulingId);
+    const { error } = await supabase.from('appointments').update({ status: 'reschedule_requested', reschedule_date: rescheduleDate, reschedule_time_slot: rescheduleSlot, cancel_reason: rescheduleReason.trim(), updated_at: new Date().toISOString() } as any).eq('id', reschedulingId);
     if (error) { toast.error('Failed to request reschedule'); return; }
-    toast.success('Reschedule request sent!'); setReschedulingId(null); fetchData();
+    toast.success('Reschedule request sent!'); setReschedulingId(null); setRescheduleReason(''); fetchData();
     // Email to patient - holding status
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.email) {
       sendAppointmentEmail({ type: 'reschedule_holding', to: user.email, patientName: patient!.name, date: apt?.appointment_date || '', time: apt?.time_slot || '', newDate: rescheduleDate, newTime: rescheduleSlot });
     }
-    // Email to doctor - reschedule request
-    if (apt) { const doctorEmail = await getDoctorEmail(); if (doctorEmail) { sendAppointmentEmail({ type: 'reschedule_requested', to: doctorEmail, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot, newDate: rescheduleDate, newTime: rescheduleSlot }); } }
+    // Email to doctor - reschedule request (with reason)
+    if (apt) { const doctorEmail = await getDoctorEmail(); if (doctorEmail) { sendAppointmentEmail({ type: 'reschedule_requested', to: doctorEmail, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot, newDate: rescheduleDate, newTime: rescheduleSlot, reason: rescheduleReason.trim() }); } }
   };
 
   const handleUploadReport = async (
@@ -759,8 +761,9 @@ const PatientDashboard: React.FC = () => {
               reschedulingId={reschedulingId}
               rescheduleDate={rescheduleDate} setRescheduleDate={(d) => { setRescheduleDate(d); loadSlots(d, 'reschedule'); }}
               rescheduleSlot={rescheduleSlot} setRescheduleSlot={setRescheduleSlot}
+              rescheduleReason={rescheduleReason} setRescheduleReason={setRescheduleReason}
               rescheduleBookedSlots={rescheduleBookedSlots}
-              onConfirmReschedule={confirmReschedule} onCancelReschedule={() => setReschedulingId(null)}
+              onConfirmReschedule={confirmReschedule} onCancelReschedule={() => { setReschedulingId(null); setRescheduleReason(''); }}
               todayStr={todayStr} maxDateStr={maxDateStr}
             />
           )}
@@ -1004,6 +1007,7 @@ const AppointmentsSection: React.FC<{
   reschedulingId: string | null;
   rescheduleDate: string; setRescheduleDate: (v: string) => void;
   rescheduleSlot: string; setRescheduleSlot: (v: string) => void; rescheduleBookedSlots: string[];
+  rescheduleReason: string; setRescheduleReason: (v: string) => void;
   onConfirmReschedule: () => void; onCancelReschedule: () => void;
   todayStr: string; maxDateStr: string;
 }> = (props) => {
@@ -1233,8 +1237,12 @@ const AppointmentsSection: React.FC<{
                   })}
                 </div>
               </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Reason for rescheduling <span className="text-destructive">*</span></Label>
+                <Textarea value={props.rescheduleReason} onChange={e => props.setRescheduleReason(e.target.value)} rows={2} className="mt-2 resize-none rounded-xl border-border/30" placeholder="Please tell the doctor why you need to reschedule..." />
+              </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={props.onConfirmReschedule} className="flex-1 rounded-xl">Confirm</Button>
+                <Button size="sm" onClick={props.onConfirmReschedule} disabled={!props.rescheduleReason.trim() || !props.rescheduleDate || !props.rescheduleSlot} className="flex-1 rounded-xl">Confirm</Button>
                 <Button size="sm" variant="ghost" onClick={props.onCancelReschedule} className="text-muted-foreground rounded-xl">Cancel</Button>
               </div>
             </div>
