@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { format, addDays, isBefore, isAfter, startOfDay } from 'date-fns';
 import { sendAppointmentEmail, getDoctorEmail } from '@/lib/appointmentEmail';
+import { notifyUser, getDoctorUserId } from '@/lib/push';
 import { useThemeFull } from '@/lib/theme';
 import { getJoinWindowState } from '@/lib/appointmentWindow';
 import { canPatientBookSlot, canPatientModifyAppointment, getClinicTodayDateString, getEffectiveAppointmentStatus, shouldAutoCompleteAppointment } from '@/lib/appointmentRules';
