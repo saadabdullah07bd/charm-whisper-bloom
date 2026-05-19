@@ -23,6 +23,7 @@ import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format, addDays, isBefore, isAfter, startOfDay } from 'date-fns';
+import { bn as bnLocale, enUS as enLocale } from 'date-fns/locale';
 import { sendAppointmentEmail, getDoctorEmail } from '@/lib/appointmentEmail';
 import { notifyUser, getDoctorUserId } from '@/lib/push';
 import { useThemeFull } from '@/lib/theme';
@@ -152,7 +153,7 @@ const PatientDashboard: React.FC = () => {
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
-  const signOut = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  const signOut = async () => { await supabase.auth.signOut(); };
   const themeIcon = theme === 'dark' ? <Moon size={16} /> : theme === 'light' ? <Sun size={16} /> : <Monitor size={16} />;
   const cycleTheme = () => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light');
 
@@ -195,8 +196,10 @@ const PatientDashboard: React.FC = () => {
     setTab(newTab);
   };
 
-  // ── Swipe gesture support — left/right swipe moves between tabs ──
-  const swipeOrder: Tab[] = ['profile', 'appointments', 'visits', 'prescriptions', 'files', 'account', 'settings'];
+  // ── Swipe gesture support — follows the mobile bottom tab order ──
+  // Hub sub-tabs (visits/files/account/settings/manual) are folded onto 'more'
+  // for swipe positioning so they behave like sub-pages of Hub.
+  const swipeOrder: Tab[] = ['profile', 'prescriptions', 'appointments', 'more'];
   const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const onTouchStart = (e: ReactTouchEvent) => {
     const t = e.touches[0];
@@ -211,7 +214,10 @@ const PatientDashboard: React.FC = () => {
     const dy = t.clientY - start.y;
     const dt = Date.now() - start.t;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5 || dt > 600) return;
-    const cur = swipeOrder.indexOf(tab);
+    // Map any hub sub-tab to 'more' so right-swipe from there lands on appointments.
+    const hubKeys: Tab[] = ['visits', 'files', 'account', 'settings', 'manual', 'more'];
+    const effective: Tab = hubKeys.includes(tab) ? 'more' : tab;
+    const cur = swipeOrder.indexOf(effective);
     if (cur < 0) return;
     const next = dx < 0 ? cur + 1 : cur - 1;
     if (next < 0 || next >= swipeOrder.length) return;
@@ -735,8 +741,11 @@ const PatientDashboard: React.FC = () => {
         <div className="flex-1 min-w-0">
       {/* ── Mobile Glass Header ── */}
       <header className="md:hidden sticky top-0 z-30 border-b border-border/20" style={{ background: 'hsl(var(--background)/0.6)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
-        <div className="max-w-lg mx-auto px-5 h-[60px] flex items-center justify-center">
-          <h1 className="text-[18px] font-semibold tracking-[-0.01em]" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</h1>
+        <div className="max-w-lg mx-auto px-5 py-2.5 flex items-center min-h-[60px]">
+          <div className="min-w-0">
+            <h1 className="text-base font-semibold tracking-tight leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</h1>
+            <p className="text-[11px] text-muted-foreground truncate leading-tight">{patient.name}</p>
+          </div>
         </div>
       </header>
 
@@ -1029,6 +1038,9 @@ const AppointmentsSection: React.FC<{
   todayStr: string; maxDateStr: string;
 }> = (props) => {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
+  const isBn = (i18n.language || '').startsWith('bn');
+  const calLocale = isBn ? bnLocale : enLocale;
   const handleJoinCall = (apt: AppointmentRecord) => {
     navigate(`/call/${apt.id}`);
   };
@@ -1069,11 +1081,11 @@ const AppointmentsSection: React.FC<{
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal mt-2 h-11 rounded-xl border-border/30", !props.bookingDate && "text-muted-foreground")}>
                   <Calendar className="mr-2 h-4 w-4 text-primary" />
-                  {props.bookingDate ? format(new Date(props.bookingDate + 'T00:00:00'), 'PPP') : 'Pick a date'}
+                  {props.bookingDate ? format(new Date(props.bookingDate + 'T00:00:00'), 'PPP', { locale: calLocale }) : (isBn ? 'তারিখ নির্বাচন করুন' : 'Pick a date')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarPicker mode="single" selected={props.bookingDate ? new Date(props.bookingDate + 'T00:00:00') : undefined} onSelect={(date) => { if (date) props.setBookingDate(format(date, 'yyyy-MM-dd')); }} disabled={(date) => isBefore(date, startOfDay(new Date())) || isAfter(date, addDays(new Date(), 12))} initialFocus className="p-3 pointer-events-auto" />
+                <CalendarPicker locale={calLocale} mode="single" selected={props.bookingDate ? new Date(props.bookingDate + 'T00:00:00') : undefined} onSelect={(date) => { if (date) props.setBookingDate(format(date, 'yyyy-MM-dd')); }} disabled={(date) => isBefore(date, startOfDay(new Date())) || isAfter(date, addDays(new Date(), 12))} initialFocus className="p-3 pointer-events-auto" />
               </PopoverContent>
             </Popover>
           </div>
@@ -1220,11 +1232,11 @@ const AppointmentsSection: React.FC<{
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal mt-2 rounded-xl border-border/30", !props.rescheduleDate && "text-muted-foreground")} size="sm">
                       <Calendar className="mr-2 h-3 w-3" />
-                      {props.rescheduleDate ? format(new Date(props.rescheduleDate + 'T00:00:00'), 'PPP') : 'Pick date'}
+                      {props.rescheduleDate ? format(new Date(props.rescheduleDate + 'T00:00:00'), 'PPP', { locale: calLocale }) : (isBn ? 'তারিখ' : 'Pick date')}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarPicker mode="single" selected={props.rescheduleDate ? new Date(props.rescheduleDate + 'T00:00:00') : undefined} onSelect={(date) => { if (date) props.setRescheduleDate(format(date, 'yyyy-MM-dd')); }} disabled={(date) => isBefore(date, startOfDay(new Date())) || isAfter(date, addDays(new Date(), 12))} initialFocus className="p-3 pointer-events-auto" />
+                    <CalendarPicker locale={calLocale} mode="single" selected={props.rescheduleDate ? new Date(props.rescheduleDate + 'T00:00:00') : undefined} onSelect={(date) => { if (date) props.setRescheduleDate(format(date, 'yyyy-MM-dd')); }} disabled={(date) => isBefore(date, startOfDay(new Date())) || isAfter(date, addDays(new Date(), 12))} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -1703,9 +1715,6 @@ const PatientSettingsTab: React.FC = () => {
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   return (
     <div className="space-y-5">
-      {/* Notifications */}
-      <NotificationSettingsCard />
-
       {/* Appearance — collapsible */}
       <GlassCard className="p-5">
         <button
@@ -1795,6 +1804,8 @@ const PatientSettingsTab: React.FC = () => {
           </div>
         )}
       </GlassCard>
+
+      <p className="text-center text-[11px] text-muted-foreground pt-2">MedHelp · v1.0.0</p>
     </div>
   );
 };

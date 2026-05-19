@@ -26,7 +26,7 @@ const DEFAULT_SETTINGS: DoctorSettings = {
 
 const Index: React.FC = () => {
   const { t } = useTranslation();
-  const signOut = async () => { await (await import('@/integrations/supabase/client')).supabase.auth.signOut(); window.location.reload(); };
+  const signOut = async () => { await (await import('@/integrations/supabase/client')).supabase.auth.signOut(); };
   const navigate = useNavigate();
   const params = useParams<{ tab?: string }>();
   const VALID_TABS: Tab[] = ['dashboard', 'patients', 'appointments', 'history', 'settings'];
@@ -270,12 +270,6 @@ const Index: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={cycleTheme}
-              aria-label={`Switch theme (currently ${theme})`}
-              className="w-9 h-9 rounded-full glass-button flex items-center justify-center text-muted-foreground hover:text-foreground transition-all duration-150 btn-press">
-              {themeIcon}
-            </button>
             <button
               onClick={() => setIsSearchOpen(true)}
               aria-label="Search patients"

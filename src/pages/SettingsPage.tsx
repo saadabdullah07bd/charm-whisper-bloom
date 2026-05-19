@@ -363,13 +363,14 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
         <button
           onClick={async () => {
             await supabase.auth.signOut();
-            window.location.reload();
           }}
           className="w-full flex items-center justify-center gap-2 rounded-xl py-3 font-medium text-sm text-destructive border border-destructive/30 bg-destructive/5 hover:bg-destructive/10 transition-all btn-press"
         >
           <LogOut size={16} /> {t('common.signOut')}
         </button>
       </div>
+
+      <p className="text-center text-[11px] text-muted-foreground pt-3">MedHelp · API v1.0.0</p>
     </div>
   );
 };
