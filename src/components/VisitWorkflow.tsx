@@ -7,6 +7,7 @@ import AutoSuggestInput from '@/components/AutoSuggestInput';
 import PrescriptionUpload from '@/components/PrescriptionUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { sendAppointmentEmail } from '@/lib/appointmentEmail';
+import { notifyUser } from '@/lib/push';
 
 interface Props {
   patient: Patient;
