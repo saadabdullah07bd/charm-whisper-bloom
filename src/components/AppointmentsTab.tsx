@@ -76,6 +76,7 @@ const AppointmentsTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [patientDetails, setPatientDetails] = useState<Record<string, any>>({});
+  const [patientAvatars, setPatientAvatars] = useState<Record<string, string | null>>({});
   const [loadingPatient, setLoadingPatient] = useState<string | null>(null);
   const [nowTick, setNowTick] = useState(Date.now());
 
