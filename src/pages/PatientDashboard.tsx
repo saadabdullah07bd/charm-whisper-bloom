@@ -473,22 +473,23 @@ const PatientDashboard: React.FC = () => {
 
   const startReschedule = (apt: AppointmentRecord) => {
     if (!canPatientModifyAppointment(apt)) { toast.error('You can reschedule only up to 2 hours before the appointment.'); return; }
-    setReschedulingId(apt.id); setRescheduleDate(''); setRescheduleSlot(''); setCancellingAptId(null);
+    setReschedulingId(apt.id); setRescheduleDate(''); setRescheduleSlot(''); setRescheduleReason(''); setCancellingAptId(null);
   };
 
   const confirmReschedule = async () => {
     if (!reschedulingId || !rescheduleDate || !rescheduleSlot) { toast.error('Select new date and time'); return; }
+    if (!rescheduleReason.trim()) { toast.error('Please provide a reason for rescheduling'); return; }
     const apt = appointments.find(a => a.id === reschedulingId);
-    const { error } = await supabase.from('appointments').update({ status: 'reschedule_requested', reschedule_date: rescheduleDate, reschedule_time_slot: rescheduleSlot, updated_at: new Date().toISOString() } as any).eq('id', reschedulingId);
+    const { error } = await supabase.from('appointments').update({ status: 'reschedule_requested', reschedule_date: rescheduleDate, reschedule_time_slot: rescheduleSlot, cancel_reason: rescheduleReason.trim(), updated_at: new Date().toISOString() } as any).eq('id', reschedulingId);
     if (error) { toast.error('Failed to request reschedule'); return; }
-    toast.success('Reschedule request sent!'); setReschedulingId(null); fetchData();
+    toast.success('Reschedule request sent!'); setReschedulingId(null); setRescheduleReason(''); fetchData();
     // Email to patient - holding status
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.email) {
       sendAppointmentEmail({ type: 'reschedule_holding', to: user.email, patientName: patient!.name, date: apt?.appointment_date || '', time: apt?.time_slot || '', newDate: rescheduleDate, newTime: rescheduleSlot });
     }
-    // Email to doctor - reschedule request
-    if (apt) { const doctorEmail = await getDoctorEmail(); if (doctorEmail) { sendAppointmentEmail({ type: 'reschedule_requested', to: doctorEmail, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot, newDate: rescheduleDate, newTime: rescheduleSlot }); } }
+    // Email to doctor - reschedule request (with reason)
+    if (apt) { const doctorEmail = await getDoctorEmail(); if (doctorEmail) { sendAppointmentEmail({ type: 'reschedule_requested', to: doctorEmail, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot, newDate: rescheduleDate, newTime: rescheduleSlot, reason: rescheduleReason.trim() }); } }
   };
 
   const handleUploadReport = async (
