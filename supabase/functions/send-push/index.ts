@@ -82,20 +82,39 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    // Auth: only trusted internal callers (edge functions, cron) bearing the
-    // service-role key may invoke this. Prevents arbitrary public push spam.
+    // Auth: accept either (a) service-role bearer (trusted internal callers like
+    // edge functions and cron) OR (b) a valid user JWT. With a user JWT we will
+    // later authorize that the target userId is allowed for this caller.
     const authHeader = req.headers.get('Authorization') ?? '';
     const bearer = authHeader.toLowerCase().startsWith('bearer ')
       ? authHeader.slice(7).trim() : '';
-    if (!SERVICE_ROLE || bearer !== SERVICE_ROLE) {
+    if (!bearer) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const isServiceCall = !!SERVICE_ROLE && bearer === SERVICE_ROLE;
+
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    let callerId: string | null = null;
+    let callerIsDoctor = false;
+    if (!isServiceCall) {
+      const { data: claimsData, error: claimsErr } = await admin.auth.getClaims(bearer);
+      if (claimsErr || !claimsData?.claims?.sub) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      callerId = claimsData.claims.sub as string;
+      const { data: roleRow } = await admin
+        .from('user_roles').select('role').eq('user_id', callerId).eq('role', 'doctor').maybeSingle();
+      callerIsDoctor = !!roleRow;
+    }
+
     if (!FCM_SA_JSON) {
       return new Response(JSON.stringify({ error: 'FCM_SERVICE_ACCOUNT_JSON not set' }), {
-        status: 503,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     const sa: ServiceAccount = JSON.parse(FCM_SA_JSON);
@@ -113,7 +132,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+    // Authorization for user-JWT callers: may only target self, or the doctor.
+    // Doctor-role callers may target any user (needed for approve/reject/etc).
+    if (!isServiceCall && !callerIsDoctor) {
+      const { data: docRow } = await admin
+        .from('doctor_settings').select('user_id').limit(1).maybeSingle();
+      const doctorUid = (docRow?.user_id as string) ?? null;
+      const allowed = new Set<string>();
+      if (callerId) allowed.add(callerId);
+      if (doctorUid) allowed.add(doctorUid);
+      const bad = userIds.find((u) => !allowed.has(u));
+      if (bad) {
+        return new Response(JSON.stringify({ error: 'Forbidden target' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     const { data: tokenRows, error } = await admin
       .from('device_push_tokens')
       .select('token, user_id')
