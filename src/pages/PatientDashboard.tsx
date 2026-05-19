@@ -1425,6 +1425,7 @@ const AccountTab: React.FC<{ patient: PatientRecord; onPatientUpdated: () => voi
   const [savingProfile, setSavingProfile] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(patient.avatarUrl);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -1441,17 +1442,23 @@ const AccountTab: React.FC<{ patient: PatientRecord; onPatientUpdated: () => voi
     setAvatarUrl(patient.avatarUrl);
   }, [patient.id, patient.name, patient.age, patient.dateOfBirth]);
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return; }
+    if (file.size > 8 * 1024 * 1024) { toast.error('Image must be under 8 MB'); return; }
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    if (avatarInputRef.current) avatarInputRef.current.value = '';
+  };
+
+  const handleCroppedSave = async (blob: Blob) => {
     setUploadingAvatar(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not signed in');
-      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
-      const path = `${user.id}/avatar.${ext}`;
-      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { contentType: file.type, upsert: true });
+      const path = `${user.id}/avatar.jpg`;
+      const { error: upErr } = await supabase.storage.from('avatars').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
       const cacheBusted = `${pub.publicUrl}?v=${Date.now()}`;
@@ -1460,11 +1467,11 @@ const AccountTab: React.FC<{ patient: PatientRecord; onPatientUpdated: () => voi
       setAvatarUrl(cacheBusted);
       toast.success('Profile picture updated');
       onPatientUpdated();
+      setCropSrc(null);
     } catch (err: any) {
       toast.error(err.message || 'Upload failed');
     } finally {
       setUploadingAvatar(false);
-      if (avatarInputRef.current) avatarInputRef.current.value = '';
     }
   };
 
@@ -1490,17 +1497,33 @@ const AccountTab: React.FC<{ patient: PatientRecord; onPatientUpdated: () => voi
 
   return (
     <div className="space-y-5">
+      {cropSrc && (
+        <AvatarCropperModal
+          imageSrc={cropSrc}
+          onCancel={() => setCropSrc(null)}
+          onSave={handleCroppedSave}
+        />
+      )}
       <GlassCard className="p-5 space-y-4">
         <div className="flex items-center gap-4 pb-2 border-b border-border/20">
-          <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center shrink-0" style={{ background: 'hsl(var(--primary)/0.1)' }}>
-            {avatarUrl ? <img src={avatarUrl} alt={patient.name} className="w-full h-full object-cover" /> : <User size={28} className="text-primary/60" />}
-          </div>
-          <div className="flex-1 space-y-2">
-            <button onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar} className="w-full text-sm font-medium py-2.5 px-4 rounded-xl text-primary-foreground btn-press disabled:opacity-50" style={{ background: 'hsl(var(--primary))' }}>
-              {uploadingAvatar ? 'Uploading…' : avatarUrl ? 'Replace photo' : 'Upload photo'}
+          <div className="relative shrink-0">
+            <div className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center ring-2 ring-primary/15" style={{ background: 'hsl(var(--primary)/0.1)' }}>
+              {avatarUrl ? <img src={avatarUrl} alt={patient.name} className="w-full h-full object-cover" /> : <User size={32} className="text-primary/60" />}
+            </div>
+            <button
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              aria-label="Change profile photo"
+              className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg ring-2 ring-card btn-press disabled:opacity-50"
+            >
+              {uploadingAvatar ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
             </button>
-            {avatarUrl && <button onClick={removeAvatar} className="w-full text-xs text-destructive py-2 px-3 rounded-xl border border-destructive/30 hover:bg-destructive/5 btn-press">Remove photo</button>}
-            <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleAvatarUpload} className="hidden" />
+          </div>
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <p className="text-sm font-semibold truncate">{patient.name}</p>
+            <p className="text-xs text-muted-foreground">Tap the camera icon to update your photo.</p>
+            {avatarUrl && <button onClick={removeAvatar} className="text-xs text-destructive hover:underline">Remove photo</button>}
+            <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handlePickFile} className="hidden" />
           </div>
         </div>
 
