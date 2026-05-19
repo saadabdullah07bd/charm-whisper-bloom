@@ -1237,8 +1237,12 @@ const AppointmentsSection: React.FC<{
                   })}
                 </div>
               </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Reason for rescheduling <span className="text-destructive">*</span></Label>
+                <Textarea value={props.rescheduleReason} onChange={e => props.setRescheduleReason(e.target.value)} rows={2} className="mt-2 resize-none rounded-xl border-border/30" placeholder="Please tell the doctor why you need to reschedule..." />
+              </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={props.onConfirmReschedule} className="flex-1 rounded-xl">Confirm</Button>
+                <Button size="sm" onClick={props.onConfirmReschedule} disabled={!props.rescheduleReason.trim() || !props.rescheduleDate || !props.rescheduleSlot} className="flex-1 rounded-xl">Confirm</Button>
                 <Button size="sm" variant="ghost" onClick={props.onCancelReschedule} className="text-muted-foreground rounded-xl">Cancel</Button>
               </div>
             </div>
