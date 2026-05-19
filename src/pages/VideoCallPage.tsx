@@ -110,6 +110,24 @@ export default function VideoCallPage() {
         setLoading(true);
         setError(null);
 
+        // Pre-flight: trigger the native camera/mic permission dialog BEFORE
+        // the Daily iframe loads. Inside the Capacitor WebView this fires our
+        // patched onPermissionRequest hook in MainActivity, which shows the
+        // proper OS permission dialog instead of Daily's "tap the lock icon
+        // in your browser" fallback. On regular browsers it just shows the
+        // normal getUserMedia prompt.
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          stream.getTracks().forEach((t) => t.stop());
+        } catch (permErr) {
+          console.warn('Camera/mic permission denied or unavailable:', permErr);
+          if (!cancelled) {
+            setError('Camera & microphone access is required to start the call. Please allow access in your device settings and try again.');
+            setLoading(false);
+          }
+          return;
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || (role === 'doctor' ? 'Doctor' : 'Patient');
         const join = await getDailyJoin(appointmentId, displayName);
