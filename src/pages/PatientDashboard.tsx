@@ -497,8 +497,14 @@ const PatientDashboard: React.FC = () => {
     if (user?.email) {
       sendAppointmentEmail({ type: 'reschedule_holding', to: user.email, patientName: patient!.name, date: apt?.appointment_date || '', time: apt?.time_slot || '', newDate: rescheduleDate, newTime: rescheduleSlot });
     }
+    notifyUser(user?.id, 'Reschedule requested', `New: ${rescheduleDate} ${rescheduleSlot} — awaiting doctor`, { aptId: apt?.id ?? '' });
     // Email to doctor - reschedule request (with reason)
-    if (apt) { const doctorEmail = await getDoctorEmail(); if (doctorEmail) { sendAppointmentEmail({ type: 'reschedule_requested', to: doctorEmail, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot, newDate: rescheduleDate, newTime: rescheduleSlot, reason: rescheduleReason.trim() }); } }
+    if (apt) {
+      const doctorEmail = await getDoctorEmail();
+      if (doctorEmail) { sendAppointmentEmail({ type: 'reschedule_requested', to: doctorEmail, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot, newDate: rescheduleDate, newTime: rescheduleSlot, reason: rescheduleReason.trim() }); }
+      const doctorUid = await getDoctorUserId();
+      notifyUser(doctorUid, 'Reschedule request', `${patient!.name} wants ${rescheduleDate} ${rescheduleSlot}\nReason: ${rescheduleReason.trim()}`, { aptId: apt.id });
+    }
   };
 
   const handleUploadReport = async (
