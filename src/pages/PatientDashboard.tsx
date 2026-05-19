@@ -214,7 +214,7 @@ const PatientDashboard: React.FC = () => {
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
     const dt = Date.now() - start.t;
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5 || dt > 600) return;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.2 || dt > 900) return;
     // Map any hub sub-tab to 'more' so right-swipe from there lands on appointments.
     const hubKeys: Tab[] = ['visits', 'files', 'account', 'settings', 'manual', 'more'];
     const effective: Tab = hubKeys.includes(tab) ? 'more' : tab;
