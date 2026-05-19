@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { LogOut, User, Stethoscope, FileText, FlaskConical, Upload, Download, Eye, EyeOff, Loader2, Sun, Moon, Monitor, CalendarPlus, Calendar, Clock, X, RefreshCw, ChevronRight, Plus, Bell, Printer, ArrowLeft, Share2, FolderOpen, Pill, KeyRound, Save, Settings as SettingsIcon, LayoutGrid } from 'lucide-react';
 import MobileBottomTabs from '@/components/MobileBottomTabs';
 import PatientUserManual from '@/components/PatientUserManual';
+import AvatarCropperModal from '@/components/AvatarCropperModal';
+import { Camera } from 'lucide-react';
 import PatientRegistrationForm from '@/components/PatientRegistrationForm';
 // PrescriptionPreview removed — replaced by uploaded-PDF list.
 import { useTheme } from '@/hooks/useTheme';
