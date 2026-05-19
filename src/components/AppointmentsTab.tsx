@@ -361,6 +361,7 @@ const AppointmentsTab: React.FC = () => {
         newTime: apt.reschedule_time_slot || undefined,
       });
     }
+    getPatientUserId(apt.patient_id).then(uid => notifyUser(uid, 'Reschedule declined', `Original time kept: ${apt.appointment_date} ${apt.time_slot}`, { aptId: apt.id }));
     fetchAppointments();
   };
 
