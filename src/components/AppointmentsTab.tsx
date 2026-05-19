@@ -211,6 +211,21 @@ const AppointmentsTab: React.FC = () => {
 
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
 
+  // Fetch avatars for all patients shown in the list (bulk lookup).
+  useEffect(() => {
+    const ids = Array.from(new Set(appointments.map(a => a.patient_id).filter((x): x is string => !!x && !(x in patientAvatars))));
+    if (ids.length === 0) return;
+    (async () => {
+      const { data } = await (supabase as any).from('patients').select('id, n').in('id', ids);
+      if (!data) return;
+      setPatientAvatars(prev => {
+        const next = { ...prev };
+        for (const row of data) next[row.id] = row.n ?? null;
+        return next;
+      });
+    })();
+  }, [appointments, patientAvatars]);
+
   // Schedule a browser notification at appointment time for confirmed appts.
   useEffect(() => {
     const timeouts: number[] = [];
