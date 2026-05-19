@@ -115,7 +115,7 @@ export const themeBootstrapScript = `
   var s=raw?JSON.parse(raw):{};
   var mode=s.mode||"system";
   var accent=s.accent||"slate";
-  var gradient=s.gradient||"aurora";
+  var gradient=s.gradient||"none";
   var scale=s.fontScale||"md";
   var sysDark=window.matchMedia("(prefers-color-scheme: dark)").matches;
   var dark=mode==="dark"||(mode==="system"&&sysDark);
