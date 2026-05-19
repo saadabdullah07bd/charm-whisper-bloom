@@ -443,9 +443,17 @@ const AppointmentsTab: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => toggleExpand(apt)}
-                    className="flex-1 min-w-0 text-left cursor-pointer"
+                    className="flex-1 min-w-0 text-left cursor-pointer flex items-start gap-3"
                     aria-expanded={expandedId === apt.id}
                   >
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-border/50">
+                      {apt.patient_id && patientAvatars[apt.patient_id] ? (
+                        <img src={patientAvatars[apt.patient_id]!} alt={apt.patient_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={18} className="text-primary/60" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-sm font-semibold truncate">{apt.patient_name}</span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[apt.status] || 'bg-muted text-muted-foreground'}`}>
