@@ -1804,6 +1804,8 @@ const PatientSettingsTab: React.FC = () => {
           </div>
         )}
       </GlassCard>
+
+      <p className="text-center text-[11px] text-muted-foreground pt-2">MedHelp · v1.0.0</p>
     </div>
   );
 };
