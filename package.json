@@ -12,11 +12,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "cap:patch-main": "node scripts/patch-android-main-activity.mjs",
-    "cap:sync": "vite build && cap sync android && bun run cap:patch-main",
+    "cap:sync": "vite build && cap sync && bun run cap:patch",
     "cap:add:android": "cap add android && bun run cap:patch-main",
     "cap:open:android": "cap open android",
     "android:build": "vite build && cap sync android && bun run cap:patch-main && cd android && ./gradlew assembleDebug",
-    "android:release": "vite build && cap sync android && bun run cap:patch-main && cd android && ./gradlew assembleRelease"
+    "android:release": "vite build && cap sync android && bun run cap:patch-main && cd android && ./gradlew assembleRelease",
+    "cap:patch-ios": "node scripts/patch-ios-info-plist.mjs",
+    "cap:patch": "bun run cap:patch-main && bun run cap:patch-ios",
+    "cap:add:ios": "cap add ios && bun run cap:patch-ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",
