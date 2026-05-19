@@ -179,6 +179,7 @@ const AppointmentsTab: React.FC = () => {
         newTime: doctorRescheduleSlot,
       });
     }
+    getPatientUserId(apt.patient_id).then(uid => notifyUser(uid, 'Appointment rescheduled', `New time: ${doctorRescheduleDate} ${doctorRescheduleSlot}`, { aptId: apt.id }));
     fetchAppointments();
   };
 
