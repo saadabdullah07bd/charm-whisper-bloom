@@ -8,6 +8,7 @@ import PatientUserManual from '@/components/PatientUserManual';
 import AvatarCropperModal from '@/components/AvatarCropperModal';
 import { Camera } from 'lucide-react';
 import PatientRegistrationForm from '@/components/PatientRegistrationForm';
+import BrandedSpinner from '@/components/BrandedSpinner';
 // PrescriptionPreview removed — replaced by uploaded-PDF list.
 import { useTheme } from '@/hooks/useTheme';
 import { toast } from 'sonner';
@@ -658,14 +659,7 @@ const PatientDashboard: React.FC = () => {
   const maxDateStr = new Date(today.getTime() + 12 * 86400000).toISOString().split('T')[0];
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <p className="text-xs text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
+    return <BrandedSpinner fullscreen label="Loading…" />;
   }
 
   if (showRegForm || !patient) {
@@ -1192,18 +1186,6 @@ const AppointmentsSection: React.FC<{
                       className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all text-white shadow-sm"
                       style={{ background: 'linear-gradient(135deg, hsl(152 69% 35%), hsl(174 72% 38%))' }}>
                       📹 {apt.status === 'confirmed' ? 'Join your appointment' : 'Rejoin your appointment'}
-                    </button>
-                  );
-                }
-                // Test mode — available anytime for confirmed appointments so users can verify camera/mic.
-                if (apt.status === 'confirmed') {
-                  return (
-                    <button
-                      onClick={() => handleJoinCall(apt)}
-                      title="Test camera, microphone and connection before your appointment"
-                      className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all border border-primary/30 text-primary"
-                      style={{ background: 'hsl(var(--primary)/0.06)' }}>
-                      🎥 Test call
                     </button>
                   );
                 }
