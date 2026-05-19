@@ -4,7 +4,8 @@ import { useThemeFull } from "@/lib/theme";
 
 /**
  * Keeps the native Android status bar in sync with the resolved app theme.
- * No-op on web. Safe to mount once near the root.
+ * Also enables immersive (overlay) mode so the WebView draws behind the
+ * status bar — like a fullscreen native app. No-op on web.
  */
 export default function NativeStatusBarSync() {
   const { resolvedMode } = useThemeFull();
@@ -17,23 +18,21 @@ export default function NativeStatusBarSync() {
       try {
         const { StatusBar, Style } = await import("@capacitor/status-bar");
         if (cancelled) return;
+        // Make the WebView draw behind the status bar (immersive look).
+        try { await StatusBar.setOverlaysWebView({ overlay: true }); } catch { /* ignore */ }
         await StatusBar.setStyle({
           style: resolvedMode === "dark" ? Style.Dark : Style.Light,
         });
-        // Android only: match background to current theme surface.
         if (Capacitor.getPlatform() === "android") {
-          await StatusBar.setBackgroundColor({
-            color: resolvedMode === "dark" ? "#0a0a0a" : "#f7f7f7",
-          });
+          // Transparent so the app's background shows through.
+          try { await StatusBar.setBackgroundColor({ color: "#00000000" }); } catch { /* ignore */ }
         }
       } catch {
         /* plugin not installed at runtime — ignore */
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [resolvedMode]);
 
   return null;
