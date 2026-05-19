@@ -1715,9 +1715,6 @@ const PatientSettingsTab: React.FC = () => {
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   return (
     <div className="space-y-5">
-      {/* Notifications */}
-      <NotificationSettingsCard />
-
       {/* Appearance — collapsible */}
       <GlassCard className="p-5">
         <button
