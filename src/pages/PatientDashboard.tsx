@@ -152,7 +152,7 @@ const PatientDashboard: React.FC = () => {
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
-  const signOut = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  const signOut = async () => { await supabase.auth.signOut(); };
   const themeIcon = theme === 'dark' ? <Moon size={16} /> : theme === 'light' ? <Sun size={16} /> : <Monitor size={16} />;
   const cycleTheme = () => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light');
 
@@ -195,8 +195,10 @@ const PatientDashboard: React.FC = () => {
     setTab(newTab);
   };
 
-  // ── Swipe gesture support — left/right swipe moves between tabs ──
-  const swipeOrder: Tab[] = ['profile', 'appointments', 'visits', 'prescriptions', 'files', 'account', 'settings'];
+  // ── Swipe gesture support — follows the mobile bottom tab order ──
+  // Hub sub-tabs (visits/files/account/settings/manual) are folded onto 'more'
+  // for swipe positioning so they behave like sub-pages of Hub.
+  const swipeOrder: Tab[] = ['profile', 'prescriptions', 'appointments', 'more'];
   const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const onTouchStart = (e: ReactTouchEvent) => {
     const t = e.touches[0];
@@ -211,7 +213,10 @@ const PatientDashboard: React.FC = () => {
     const dy = t.clientY - start.y;
     const dt = Date.now() - start.t;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5 || dt > 600) return;
-    const cur = swipeOrder.indexOf(tab);
+    // Map any hub sub-tab to 'more' so right-swipe from there lands on appointments.
+    const hubKeys: Tab[] = ['visits', 'files', 'account', 'settings', 'manual', 'more'];
+    const effective: Tab = hubKeys.includes(tab) ? 'more' : tab;
+    const cur = swipeOrder.indexOf(effective);
     if (cur < 0) return;
     const next = dx < 0 ? cur + 1 : cur - 1;
     if (next < 0 || next >= swipeOrder.length) return;
