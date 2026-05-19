@@ -556,6 +556,9 @@ Deno.serve(async (req) => {
 
     const { subject, html } = await buildEmail(payload);
 
+    const fromAddress = Deno.env.get("APPOINTMENT_FROM_EMAIL") || "Dr. M Abdul Bari <noreply@drmabari.com>";
+    console.log(`[send-appointment-email] type=${payload.type} to=${payload.to} from="${fromAddress}" callerKind=${callerKind}`);
+
     const response = await fetch(`${GATEWAY_URL}/emails`, {
       method: "POST",
       headers: {
@@ -565,7 +568,7 @@ Deno.serve(async (req) => {
         "X-Connection-Api-Key": RESEND_API_KEY,
       },
       body: JSON.stringify({
-        from: "Dr. M Abdul Bari <noreply@drmabari.com>",
+        from: fromAddress,
         to: [payload.to],
         subject,
         html,
@@ -575,13 +578,14 @@ Deno.serve(async (req) => {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Resend error:", JSON.stringify(data));
+      console.error(`[send-appointment-email] Resend error status=${response.status} body=${JSON.stringify(data)}`);
       return new Response(JSON.stringify({ error: "Email send failed", details: data }), {
         status: response.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    console.log(`[send-appointment-email] OK id=${data.id} type=${payload.type} to=${payload.to}`);
     return new Response(JSON.stringify({ success: true, id: data.id }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
