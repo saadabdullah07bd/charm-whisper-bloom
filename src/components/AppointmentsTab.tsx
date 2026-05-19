@@ -269,6 +269,7 @@ const AppointmentsTab: React.FC = () => {
         time: apt.time_slot,
       });
     }
+    getPatientUserId(apt.patient_id).then(uid => notifyUser(uid, 'Appointment confirmed ✅', `${apt.appointment_date} • ${apt.time_slot}`, { aptId: apt.id }));
 
     fetchAppointments();
   };
