@@ -1185,15 +1185,29 @@ const AppointmentsSection: React.FC<{
             <div className="flex flex-wrap gap-2 pt-0.5">
               {['confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status) && (() => {
                 const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(), { status: apt.status });
-                if (!w.canJoin) return null;
-                return (
-                  <button
-                    onClick={() => handleJoinCall(apt)}
-                    className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all text-white shadow-sm"
-                    style={{ background: 'linear-gradient(135deg, hsl(152 69% 35%), hsl(174 72% 38%))' }}>
-                    📹 {apt.status === 'confirmed' ? 'Join your appointment' : 'Rejoin your appointment'}
-                  </button>
-                );
+                if (w.canJoin) {
+                  return (
+                    <button
+                      onClick={() => handleJoinCall(apt)}
+                      className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all text-white shadow-sm"
+                      style={{ background: 'linear-gradient(135deg, hsl(152 69% 35%), hsl(174 72% 38%))' }}>
+                      📹 {apt.status === 'confirmed' ? 'Join your appointment' : 'Rejoin your appointment'}
+                    </button>
+                  );
+                }
+                // Test mode — available anytime for confirmed appointments so users can verify camera/mic.
+                if (apt.status === 'confirmed') {
+                  return (
+                    <button
+                      onClick={() => handleJoinCall(apt)}
+                      title="Test camera, microphone and connection before your appointment"
+                      className="text-[11px] px-4 py-2 rounded-xl font-medium transition-all border border-primary/30 text-primary"
+                      style={{ background: 'hsl(var(--primary)/0.06)' }}>
+                      🎥 Test call
+                    </button>
+                  );
+                }
+                return null;
               })()}
               {canPatientModifyAppointment(apt) && (
                 <>
