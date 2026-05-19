@@ -144,6 +144,7 @@ const PatientDashboard: React.FC = () => {
   const [reschedulingId, setReschedulingId] = useState<string | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleSlot, setRescheduleSlot] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
   const [rescheduleBookedSlots, setRescheduleBookedSlots] = useState<string[]>([]);
 
   // Tab slider ref
