@@ -48,7 +48,7 @@ const WelcomeOnboarding: React.FC<Props> = ({ onDone }) => {
             ← {lang === 'bn' ? 'ফিরে যান' : 'Back'}
           </button>
         </div>
-        <PatientUserManual />
+        <PatientUserManual onNavigate={() => setShowManual(false)} />
       </div>
     );
   }
