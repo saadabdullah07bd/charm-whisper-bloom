@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { sendAppointmentEmail } from '@/lib/appointmentEmail';
+import { notifyUser, getPatientUserId } from '@/lib/push';
 import { getJoinWindowState } from '@/lib/appointmentWindow';
 import { showBrowserNotification } from '@/lib/notifications';
 import { canDoctorModifyAppointment, getClinicTodayDateString, getEffectiveAppointmentStatus, shouldAutoCompleteAppointment } from '@/lib/appointmentRules';
