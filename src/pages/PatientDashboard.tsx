@@ -1007,6 +1007,7 @@ const AppointmentsSection: React.FC<{
   reschedulingId: string | null;
   rescheduleDate: string; setRescheduleDate: (v: string) => void;
   rescheduleSlot: string; setRescheduleSlot: (v: string) => void; rescheduleBookedSlots: string[];
+  rescheduleReason: string; setRescheduleReason: (v: string) => void;
   onConfirmReschedule: () => void; onCancelReschedule: () => void;
   todayStr: string; maxDateStr: string;
 }> = (props) => {
