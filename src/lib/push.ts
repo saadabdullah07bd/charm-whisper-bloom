@@ -31,3 +31,14 @@ export async function getDoctorUserId(): Promise<string | null> {
   cachedDoctorUserId = (data?.user_id as string) ?? null;
   return cachedDoctorUserId;
 }
+
+export async function getPatientUserId(patientId: string | null | undefined): Promise<string | null> {
+  if (!patientId) return null;
+  const { data } = await supabase
+    .from('patients')
+    .select('user_id')
+    .eq('id', patientId)
+    .maybeSingle();
+  return (data?.user_id as string) ?? null;
+}
+
