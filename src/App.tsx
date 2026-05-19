@@ -11,10 +11,14 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import VideoCallPage from "./pages/VideoCallPage";
 import NativeStatusBarSync from "./components/NativeStatusBarSync";
+import { useEffect } from "react";
+import { bootstrapPermissions } from "./lib/permissionsBootstrap";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  useEffect(() => { void bootstrapPermissions(); }, []);
+  return (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
     <TooltipProvider>
@@ -41,6 +45,7 @@ const App = () => (
     </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
