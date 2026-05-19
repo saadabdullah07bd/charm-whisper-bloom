@@ -41,7 +41,7 @@ interface Persisted {
 const DEFAULTS: Persisted = {
   mode: "system",
   accent: "slate",
-  gradient: "aurora",
+  gradient: "none",
   fontScale: "md",
 };
 
