@@ -1726,9 +1726,70 @@ const P_SCALES: { id: 'sm' | 'md' | 'lg'; label: string }[] = [
 
 const PatientSettingsTab: React.FC = () => {
   const { mode, setMode, accent, setAccent, gradient, setGradient, fontScale, setFontScale } = useThemeFull();
+  const { i18n } = useTranslation();
+  const currentLang = (i18n.language?.startsWith('en') ? 'en' : 'bn') as 'bn' | 'en';
+  const setLang = (l: 'bn' | 'en') => {
+    i18n.changeLanguage(l);
+    try { localStorage.setItem('medhelp.lang', l); } catch { /* ignore */ }
+  };
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   return (
     <div className="space-y-5">
+      {/* Quick controls — Language */}
+      <GlassCard className="p-5 space-y-3">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Globe size={16} className="text-primary" /> Language / ভাষা
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          {(['bn', 'en'] as const).map((l) => {
+            const active = currentLang === l;
+            return (
+              <button key={l} onClick={() => setLang(l)}
+                className={cn('flex items-center justify-between rounded-xl border p-3 text-left transition btn-press',
+                  active ? 'border-primary ring-2 ring-primary/30 bg-primary/5' : 'border-border/30 hover:border-foreground/30')}>
+                <span className="text-sm font-semibold">{l === 'bn' ? 'বাংলা' : 'English'}</span>
+                {active && <Check size={14} className="text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      </GlassCard>
+
+      {/* Quick controls — Color mode */}
+      <GlassCard className="p-5 space-y-3">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Sun size={16} className="text-primary" /> Color mode
+        </h3>
+        <div className="grid grid-cols-3 gap-3">
+          {P_MODES.map((m) => {
+            const active = mode === m.id;
+            const Icon = m.icon;
+            return (
+              <button key={m.id} onClick={() => setMode(m.id)}
+                className={cn('flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition btn-press',
+                  active ? 'border-primary ring-2 ring-primary/30 bg-primary/5' : 'border-border/30 hover:border-foreground/30')}>
+                <Icon size={18} />
+                <span className="text-xs font-medium">{m.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </GlassCard>
+
+      {/* Quick controls — Text size */}
+      <GlassCard className="p-5 space-y-3">
+        <h3 className="text-sm font-semibold">Text size</h3>
+        <div className="inline-flex rounded-xl border border-border/30 p-1">
+          {P_SCALES.map((s) => (
+            <button key={s.id} onClick={() => setFontScale(s.id)}
+              className={cn('rounded-lg px-4 py-1.5 text-sm transition btn-press',
+                fontScale === s.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </GlassCard>
+
       {/* Appearance — collapsible */}
       <GlassCard className="p-5">
         <button
