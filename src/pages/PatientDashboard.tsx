@@ -1038,6 +1038,9 @@ const AppointmentsSection: React.FC<{
   todayStr: string; maxDateStr: string;
 }> = (props) => {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
+  const isBn = (i18n.language || '').startsWith('bn');
+  const calLocale = isBn ? bnLocale : enLocale;
   const handleJoinCall = (apt: AppointmentRecord) => {
     navigate(`/call/${apt.id}`);
   };
@@ -1078,11 +1081,11 @@ const AppointmentsSection: React.FC<{
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal mt-2 h-11 rounded-xl border-border/30", !props.bookingDate && "text-muted-foreground")}>
                   <Calendar className="mr-2 h-4 w-4 text-primary" />
-                  {props.bookingDate ? format(new Date(props.bookingDate + 'T00:00:00'), 'PPP') : 'Pick a date'}
+                  {props.bookingDate ? format(new Date(props.bookingDate + 'T00:00:00'), 'PPP', { locale: calLocale }) : (isBn ? 'তারিখ নির্বাচন করুন' : 'Pick a date')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarPicker mode="single" selected={props.bookingDate ? new Date(props.bookingDate + 'T00:00:00') : undefined} onSelect={(date) => { if (date) props.setBookingDate(format(date, 'yyyy-MM-dd')); }} disabled={(date) => isBefore(date, startOfDay(new Date())) || isAfter(date, addDays(new Date(), 12))} initialFocus className="p-3 pointer-events-auto" />
+                <CalendarPicker locale={calLocale} mode="single" selected={props.bookingDate ? new Date(props.bookingDate + 'T00:00:00') : undefined} onSelect={(date) => { if (date) props.setBookingDate(format(date, 'yyyy-MM-dd')); }} disabled={(date) => isBefore(date, startOfDay(new Date())) || isAfter(date, addDays(new Date(), 12))} initialFocus className="p-3 pointer-events-auto" />
               </PopoverContent>
             </Popover>
           </div>
@@ -1229,11 +1232,11 @@ const AppointmentsSection: React.FC<{
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal mt-2 rounded-xl border-border/30", !props.rescheduleDate && "text-muted-foreground")} size="sm">
                       <Calendar className="mr-2 h-3 w-3" />
-                      {props.rescheduleDate ? format(new Date(props.rescheduleDate + 'T00:00:00'), 'PPP') : 'Pick date'}
+                      {props.rescheduleDate ? format(new Date(props.rescheduleDate + 'T00:00:00'), 'PPP', { locale: calLocale }) : (isBn ? 'তারিখ' : 'Pick date')}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarPicker mode="single" selected={props.rescheduleDate ? new Date(props.rescheduleDate + 'T00:00:00') : undefined} onSelect={(date) => { if (date) props.setRescheduleDate(format(date, 'yyyy-MM-dd')); }} disabled={(date) => isBefore(date, startOfDay(new Date())) || isAfter(date, addDays(new Date(), 12))} initialFocus className="p-3 pointer-events-auto" />
+                    <CalendarPicker locale={calLocale} mode="single" selected={props.rescheduleDate ? new Date(props.rescheduleDate + 'T00:00:00') : undefined} onSelect={(date) => { if (date) props.setRescheduleDate(format(date, 'yyyy-MM-dd')); }} disabled={(date) => isBefore(date, startOfDay(new Date())) || isAfter(date, addDays(new Date(), 12))} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
               </div>
