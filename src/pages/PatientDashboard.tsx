@@ -473,8 +473,11 @@ const PatientDashboard: React.FC = () => {
     fetchData();
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.email) { sendAppointmentEmail({ type: 'appointment_cancelled_by_patient', to: user.email, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot }); }
+    notifyUser(user?.id, 'Appointment cancelled', `${apt.appointment_date} ${apt.time_slot}`, { aptId: apt.id });
     const doctorEmail = await getDoctorEmail();
     if (doctorEmail) { sendAppointmentEmail({ type: 'doctor_notification', to: doctorEmail, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot, reason: patientCancelReason.trim() }); }
+    const doctorUid = await getDoctorUserId();
+    notifyUser(doctorUid, 'Appointment cancelled by patient', `${patient!.name} — ${apt.appointment_date} ${apt.time_slot}\nReason: ${patientCancelReason.trim()}`, { aptId: apt.id });
   };
 
   const startReschedule = (apt: AppointmentRecord) => {
