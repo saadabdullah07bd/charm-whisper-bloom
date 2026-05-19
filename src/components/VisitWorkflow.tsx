@@ -7,6 +7,7 @@ import AutoSuggestInput from '@/components/AutoSuggestInput';
 import PrescriptionUpload from '@/components/PrescriptionUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { sendAppointmentEmail } from '@/lib/appointmentEmail';
+import { notifyUser } from '@/lib/push';
 
 interface Props {
   patient: Patient;
@@ -131,12 +132,10 @@ const VisitWorkflow: React.FC<Props> = ({ patient, doctorSettings, existingVisit
     try {
       const { data: patientRow } = await supabase.from('patients').select('user_id').eq('id', patient.id).single();
       if (patientRow?.user_id) {
-        const { data: { user: patientUser } } = await supabase.auth.admin?.getUserById?.(patientRow.user_id) ?? { data: { user: null } };
-        // Fallback: look up email from patients table phone or use user_id lookup
         const { data: aptData } = await supabase.from('appointments').select('patient_email').eq('patient_id', patient.id).not('patient_email', 'is', null).limit(1).single();
         const patientEmail = aptData?.patient_email;
+        const medList = rx.medicines.map(m => m.name).join(', ');
         if (patientEmail) {
-          const medList = rx.medicines.map(m => m.name).join(', ');
           sendAppointmentEmail({
             type: 'prescription_ready',
             to: patientEmail,
@@ -147,6 +146,7 @@ const VisitWorkflow: React.FC<Props> = ({ patient, doctorSettings, existingVisit
             medicines: medList,
           });
         }
+        notifyUser(patientRow.user_id, '💊 Prescription ready', `${rx.diagnosis || 'Visit complete'}${medList ? `\n${medList}` : ''}`);
       }
     } catch (e) {
       console.error('Failed to send prescription email:', e);

@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { format, addDays, isBefore, isAfter, startOfDay } from 'date-fns';
 import { sendAppointmentEmail, getDoctorEmail } from '@/lib/appointmentEmail';
+import { notifyUser, getDoctorUserId } from '@/lib/push';
 import { useThemeFull } from '@/lib/theme';
 import { getJoinWindowState } from '@/lib/appointmentWindow';
 import { canPatientBookSlot, canPatientModifyAppointment, getClinicTodayDateString, getEffectiveAppointmentStatus, shouldAutoCompleteAppointment } from '@/lib/appointmentRules';
@@ -443,11 +444,16 @@ const PatientDashboard: React.FC = () => {
       if (patientEmail) {
         sendAppointmentEmail({ type: 'booking_received', to: patientEmail, patientName: patient.name, date: bookingDate, time: bookingSlot });
       }
+      // Push to patient (own device) — confirms request was received even offline later
+      const { data: { user: bookUser } } = await supabase.auth.getUser();
+      notifyUser(bookUser?.id, 'Appointment requested', `${bookingDate} • ${bookingSlot} — awaiting doctor approval`, { aptId: insertedApt?.id ?? '' });
       // Notify doctor about new appointment request with action buttons
       const doctorEmail = await getDoctorEmail();
       if (doctorEmail && insertedApt) {
         sendAppointmentEmail({ type: 'new_appointment_request', to: doctorEmail, patientName: patient.name, date: bookingDate, time: bookingSlot, appointmentId: insertedApt.id });
       }
+      const doctorUid = await getDoctorUserId();
+      notifyUser(doctorUid, 'New appointment request', `${patient.name} — ${bookingDate} ${bookingSlot}`, { aptId: insertedApt?.id ?? '' });
     }
     setBookingSubmitting(false);
   };
@@ -467,8 +473,11 @@ const PatientDashboard: React.FC = () => {
     fetchData();
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.email) { sendAppointmentEmail({ type: 'appointment_cancelled_by_patient', to: user.email, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot }); }
+    notifyUser(user?.id, 'Appointment cancelled', `${apt.appointment_date} ${apt.time_slot}`, { aptId: apt.id });
     const doctorEmail = await getDoctorEmail();
     if (doctorEmail) { sendAppointmentEmail({ type: 'doctor_notification', to: doctorEmail, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot, reason: patientCancelReason.trim() }); }
+    const doctorUid = await getDoctorUserId();
+    notifyUser(doctorUid, 'Appointment cancelled by patient', `${patient!.name} — ${apt.appointment_date} ${apt.time_slot}\nReason: ${patientCancelReason.trim()}`, { aptId: apt.id });
   };
 
   const startReschedule = (apt: AppointmentRecord) => {
@@ -488,8 +497,14 @@ const PatientDashboard: React.FC = () => {
     if (user?.email) {
       sendAppointmentEmail({ type: 'reschedule_holding', to: user.email, patientName: patient!.name, date: apt?.appointment_date || '', time: apt?.time_slot || '', newDate: rescheduleDate, newTime: rescheduleSlot });
     }
+    notifyUser(user?.id, 'Reschedule requested', `New: ${rescheduleDate} ${rescheduleSlot} — awaiting doctor`, { aptId: apt?.id ?? '' });
     // Email to doctor - reschedule request (with reason)
-    if (apt) { const doctorEmail = await getDoctorEmail(); if (doctorEmail) { sendAppointmentEmail({ type: 'reschedule_requested', to: doctorEmail, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot, newDate: rescheduleDate, newTime: rescheduleSlot, reason: rescheduleReason.trim() }); } }
+    if (apt) {
+      const doctorEmail = await getDoctorEmail();
+      if (doctorEmail) { sendAppointmentEmail({ type: 'reschedule_requested', to: doctorEmail, patientName: patient!.name, date: apt.appointment_date, time: apt.time_slot, newDate: rescheduleDate, newTime: rescheduleSlot, reason: rescheduleReason.trim() }); }
+      const doctorUid = await getDoctorUserId();
+      notifyUser(doctorUid, 'Reschedule request', `${patient!.name} wants ${rescheduleDate} ${rescheduleSlot}\nReason: ${rescheduleReason.trim()}`, { aptId: apt.id });
+    }
   };
 
   const handleUploadReport = async (
@@ -517,6 +532,8 @@ const PatientDashboard: React.FC = () => {
       if (doctorEmail) {
         sendAppointmentEmail({ type: 'report_uploaded', to: doctorEmail, patientName: patient.name, date: new Date().toISOString().split('T')[0], time: '', reportName: file.name });
       }
+      const doctorUid = await getDoctorUserId();
+      notifyUser(doctorUid, 'New patient report', `${patient.name} uploaded ${file.name}`);
     } catch (err: any) { toast.error(err.message || 'Upload failed'); }
     finally { setUploading(false); e.target.value = ''; }
   };

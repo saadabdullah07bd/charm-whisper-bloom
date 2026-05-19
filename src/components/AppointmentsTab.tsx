@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { sendAppointmentEmail } from '@/lib/appointmentEmail';
+import { notifyUser, getPatientUserId } from '@/lib/push';
 import { getJoinWindowState } from '@/lib/appointmentWindow';
 import { showBrowserNotification } from '@/lib/notifications';
 import { canDoctorModifyAppointment, getClinicTodayDateString, getEffectiveAppointmentStatus, shouldAutoCompleteAppointment } from '@/lib/appointmentRules';
@@ -178,6 +179,7 @@ const AppointmentsTab: React.FC = () => {
         newTime: doctorRescheduleSlot,
       });
     }
+    getPatientUserId(apt.patient_id).then(uid => notifyUser(uid, 'Appointment rescheduled', `New time: ${doctorRescheduleDate} ${doctorRescheduleSlot}`, { aptId: apt.id }));
     fetchAppointments();
   };
 
@@ -267,6 +269,7 @@ const AppointmentsTab: React.FC = () => {
         time: apt.time_slot,
       });
     }
+    getPatientUserId(apt.patient_id).then(uid => notifyUser(uid, 'Appointment confirmed ✅', `${apt.appointment_date} • ${apt.time_slot}`, { aptId: apt.id }));
 
     fetchAppointments();
   };
@@ -299,6 +302,7 @@ const AppointmentsTab: React.FC = () => {
         reason: cancelReason.trim() || undefined,
       });
     }
+    getPatientUserId(apt.patient_id).then(uid => notifyUser(uid, 'Appointment cancelled by doctor', `${apt.appointment_date} ${apt.time_slot}${cancelReason.trim() ? `\nReason: ${cancelReason.trim()}` : ''}`, { aptId: apt.id }));
     fetchAppointments();
   };
 
@@ -330,6 +334,7 @@ const AppointmentsTab: React.FC = () => {
         newTime: apt.reschedule_time_slot,
       });
     }
+    getPatientUserId(apt.patient_id).then(uid => notifyUser(uid, 'Reschedule approved ✅', `New: ${apt.reschedule_date} ${apt.reschedule_time_slot}`, { aptId: apt.id }));
     fetchAppointments();
   };
 
@@ -356,6 +361,7 @@ const AppointmentsTab: React.FC = () => {
         newTime: apt.reschedule_time_slot || undefined,
       });
     }
+    getPatientUserId(apt.patient_id).then(uid => notifyUser(uid, 'Reschedule declined', `Original time kept: ${apt.appointment_date} ${apt.time_slot}`, { aptId: apt.id }));
     fetchAppointments();
   };
 
