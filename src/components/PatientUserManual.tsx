@@ -45,7 +45,7 @@ const PatientUserManual: React.FC<PatientUserManualProps> = ({ onNavigate }) => 
           en: 'Click "Continue with Google" and sign in with your Gmail account.',
         },
         {
-          bn: 'Sign in করার পর Profile form আসবে — সেখানে আপনার নাম, বয়স, lিঙ্গ, ফোন নম্বর, ঠিকানা সহ সমস্ত তথ্য পূরণ করুন।',
+          bn: 'Sign in করার পর Profile form আসবে — সেখানে আপনার নাম, বয়স, লিঙ্গ, ফোন নম্বর ও ঠিকানা সঠিকভাবে পূরণ করুন।',
           en: 'After sign-in, fill out the profile form — name, age, gender, phone, address and other details.',
         },
         {
