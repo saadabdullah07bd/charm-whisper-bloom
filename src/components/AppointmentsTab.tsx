@@ -479,6 +479,7 @@ const AppointmentsTab: React.FC = () => {
                         </p>
                       </div>
                     )}
+                    </div>
                   </button>
 
                   <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
