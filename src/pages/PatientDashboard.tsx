@@ -8,6 +8,7 @@ import PatientUserManual from '@/components/PatientUserManual';
 import AvatarCropperModal from '@/components/AvatarCropperModal';
 import { Camera } from 'lucide-react';
 import PatientRegistrationForm from '@/components/PatientRegistrationForm';
+import BrandedSpinner from '@/components/BrandedSpinner';
 // PrescriptionPreview removed — replaced by uploaded-PDF list.
 import { useTheme } from '@/hooks/useTheme';
 import { toast } from 'sonner';
