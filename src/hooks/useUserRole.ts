@@ -3,7 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type AppRole = 'doctor' | 'patient' | null;
 
-const ADMIN_EMAILS = ['drmabaribd@gmail.com'];
+// Role resolution is server-driven. The doctor role can only be assigned by an
+// administrator via a server-side path (a DB trigger blocks self-assignment).
+// New users self-assign the 'patient' role; everyone else gets whatever the DB
+// confirms is in user_roles.
 
 export function useUserRole() {
   const [role, setRole] = useState<AppRole>(null);
@@ -19,27 +22,20 @@ export function useUserRole() {
       const { data } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
-        .limit(1)
-        .maybeSingle();
+        .eq('user_id', user.id);
 
-      let resolved: AppRole = (data?.role as AppRole) ?? null;
+      let resolved: AppRole = null;
+      const roles = (data ?? []).map((r) => r.role as 'doctor' | 'patient');
+      if (roles.includes('doctor')) resolved = 'doctor';
+      else if (roles.includes('patient')) resolved = 'patient';
 
       if (!resolved) {
-        const email = (user.email ?? '').toLowerCase();
-        const desired: 'doctor' | 'patient' = ADMIN_EMAILS.includes(email) ? 'doctor' : 'patient';
+        // Self-assign patient role. DB trigger blocks any attempt to insert 'doctor'.
         const { error: insertErr } = await supabase
           .from('user_roles')
-          .insert({ user_id: user.id, role: desired });
-        if (insertErr) console.error('role insert failed', insertErr);
-        resolved = desired;
-      } else {
-        // Upgrade existing user to doctor if email matches admin list
-        const email = (user.email ?? '').toLowerCase();
-        if (ADMIN_EMAILS.includes(email) && resolved !== 'doctor') {
-          await supabase.from('user_roles').insert({ user_id: user.id, role: 'doctor' });
-          resolved = 'doctor';
-        }
+          .insert({ user_id: user.id, role: 'patient' });
+        if (!insertErr) resolved = 'patient';
+        else console.error('role insert failed', insertErr);
       }
 
       if (!cancelled) {

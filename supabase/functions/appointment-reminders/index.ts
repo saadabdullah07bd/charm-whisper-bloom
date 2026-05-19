@@ -27,6 +27,21 @@ function slotToUtc(dateStr: string, timeSlot: string): Date | null {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  // Require either a shared CRON_SECRET header or a service-role bearer token.
+  const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
+  const providedCron = req.headers.get("x-cron-secret") ?? "";
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const bearer = authHeader.toLowerCase().startsWith("bearer ")
+    ? authHeader.slice(7).trim() : "";
+  const cronOk = CRON_SECRET && providedCron === CRON_SECRET;
+  const serviceOk = SERVICE_ROLE_KEY && bearer === SERVICE_ROLE_KEY;
+  if (!cronOk && !serviceOk) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
