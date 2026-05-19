@@ -532,6 +532,8 @@ const PatientDashboard: React.FC = () => {
       if (doctorEmail) {
         sendAppointmentEmail({ type: 'report_uploaded', to: doctorEmail, patientName: patient.name, date: new Date().toISOString().split('T')[0], time: '', reportName: file.name });
       }
+      const doctorUid = await getDoctorUserId();
+      notifyUser(doctorUid, 'New patient report', `${patient.name} uploaded ${file.name}`);
     } catch (err: any) { toast.error(err.message || 'Upload failed'); }
     finally { setUploading(false); e.target.value = ''; }
   };
