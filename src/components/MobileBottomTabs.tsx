@@ -58,8 +58,8 @@ export function MobileBottomTabs<K extends string>({ tabs, activeKey, onChange }
   const baseCenter = (i: number) => i * cellW + cellW / 2;
   const rawCenter = pressing && dragX != null ? dragX : baseCenter(activeIndex);
   const totalW = cellW * tabs.length;
-  const idleW = Math.max(0, cellW - 10);
-  const dragW = Math.min(cellW - 14, 68);
+  const idleW = Math.max(0, cellW - 4);
+  const dragW = Math.min(cellW - 6, 92);
   const indicatorW = pressing ? dragW : idleW;
   const halfW = indicatorW / 2;
   const indicatorCenter = Math.max(halfW, Math.min(totalW - halfW, rawCenter));
