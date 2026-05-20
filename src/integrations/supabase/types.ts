@@ -73,8 +73,36 @@ export type Database = {
           },
         ]
       }
+      device_push_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       doctor_settings: {
         Row: {
+          chambers: Json | null
           created_at: string
           degrees: string
           degrees_bn: string | null
@@ -86,6 +114,7 @@ export type Database = {
           mobile: string
           name: string
           name_bn: string | null
+          online_consultation: Json | null
           signature_data_url: string | null
           specialization: string | null
           specialization_bn: string | null
@@ -96,6 +125,7 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          chambers?: Json | null
           created_at?: string
           degrees?: string
           degrees_bn?: string | null
@@ -107,6 +137,7 @@ export type Database = {
           mobile?: string
           name?: string
           name_bn?: string | null
+          online_consultation?: Json | null
           signature_data_url?: string | null
           specialization?: string | null
           specialization_bn?: string | null
@@ -117,6 +148,7 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          chambers?: Json | null
           created_at?: string
           degrees?: string
           degrees_bn?: string | null
@@ -128,6 +160,7 @@ export type Database = {
           mobile?: string
           name?: string
           name_bn?: string | null
+          online_consultation?: Json | null
           signature_data_url?: string | null
           specialization?: string | null
           specialization_bn?: string | null
