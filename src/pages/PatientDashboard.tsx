@@ -1356,6 +1356,7 @@ const PrescriptionsTab: React.FC<{ prescriptions: PrescriptionRecord[]; onView: 
           )}
           {rx.advice && <p className="text-xs text-muted-foreground"><span className="font-medium">Advice:</span> {rx.advice}</p>}
         </GlassCard>
+        </div>
       ))}
     </div>
   );
