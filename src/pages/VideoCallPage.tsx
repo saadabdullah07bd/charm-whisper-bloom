@@ -238,7 +238,15 @@ export default function VideoCallPage() {
   }
 
   return (
-    <div className="fixed inset-0 z-[200] h-[100dvh] w-screen overflow-hidden bg-background">
+    <div
+      className="fixed inset-0 z-[200] h-[100dvh] w-screen overflow-hidden bg-background"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
+      }}
+    >
       <div ref={containerRef} className="relative h-full w-full overflow-hidden">
         {loading && !error && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/90">
