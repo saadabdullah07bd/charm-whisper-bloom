@@ -156,7 +156,7 @@ ${appointmentRows}
         "X-Connection-Api-Key": RESEND_API_KEY,
       },
       body: JSON.stringify({
-        from: "Dr. M Abdul Bari <onboarding@resend.dev>",
+        from: Deno.env.get("APPOINTMENT_FROM_EMAIL") || "Dr. M Abdul Bari <noreply@drmabari.com>",
         to: [doctorData.email],
         subject,
         html,
