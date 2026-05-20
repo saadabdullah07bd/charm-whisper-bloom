@@ -117,11 +117,19 @@ export default function VideoCallPage() {
         setLoading(true);
         setError(null);
 
-        // NOTE: We deliberately do NOT call getUserMedia() here as a pre-flight.
-        // Inside the Capacitor WebView that promise can hang forever waiting
-        // for our WebChromeClient.onPermissionRequest hook, leaving the user
-        // stuck on "Starting video call...". Daily will request the camera/mic
-        // itself, and MainActivity grants the WebView resources automatically.
+        // Ask for camera + microphone right before joining (native only).
+        // On web, Daily handles the browser prompt itself.
+        const permsOk = await requestCameraAndMicForVideoCall();
+        if (!permsOk) {
+          setError(t('video.couldNotStart') + ' (camera/microphone permission denied)');
+          setLoading(false);
+          return;
+        }
+
+        // NOTE: We deliberately do NOT call getUserMedia({video:true}) here as a
+        // pre-flight for Daily. Inside the Capacitor WebView that promise can
+        // hang waiting for our WebChromeClient.onPermissionRequest hook. Daily
+        // will request camera/mic itself once we call join().
 
         const { data: { user } } = await supabase.auth.getUser();
         const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || (role === 'doctor' ? 'Doctor' : 'Patient');
