@@ -439,7 +439,7 @@ const AppointmentsTab: React.FC = () => {
             const appointmentDateTime = parseAppointmentDateTime(apt.appointment_date, apt.time_slot);
             return (
               <div key={apt.id} className={`glass-card p-4 ${isToday ? 'ring-2 ring-primary/30' : ''}`}>
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => toggleExpand(apt)}
@@ -482,7 +482,7 @@ const AppointmentsTab: React.FC = () => {
                     </div>
                   </button>
 
-                  <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-1 flex-wrap sm:shrink-0 sm:justify-end" onClick={(e) => e.stopPropagation()}>
                     {apt.status === 'pending' && canDoctorModifyAppointment(apt) && (
                       <>
                         <button onClick={() => handleApprove(apt)} title="Approve"

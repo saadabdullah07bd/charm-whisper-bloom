@@ -110,35 +110,31 @@ export default function VideoCallPage() {
         setLoading(true);
         setError(null);
 
-        // Pre-flight: trigger the native camera/mic permission dialog BEFORE
-        // the Daily iframe loads. Inside the Capacitor WebView this fires our
-        // patched onPermissionRequest hook in MainActivity, which shows the
-        // proper OS permission dialog instead of Daily's "tap the lock icon
-        // in your browser" fallback. On regular browsers it just shows the
-        // normal getUserMedia prompt.
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-          stream.getTracks().forEach((t) => t.stop());
-        } catch (permErr) {
-          console.warn('Camera/mic permission denied or unavailable:', permErr);
-          if (!cancelled) {
-            setError('Camera & microphone access is required to start the call. Please allow access in your device settings and try again.');
-            setLoading(false);
-          }
-          return;
-        }
+        // NOTE: We deliberately do NOT call getUserMedia() here as a pre-flight.
+        // Inside the Capacitor WebView that promise can hang forever waiting
+        // for our WebChromeClient.onPermissionRequest hook, leaving the user
+        // stuck on "Starting video call...". Daily will request the camera/mic
+        // itself, and MainActivity grants the WebView resources automatically.
 
         const { data: { user } } = await supabase.auth.getUser();
         const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || (role === 'doctor' ? 'Doctor' : 'Patient');
-        const join = await getDailyJoin(appointmentId, displayName);
+
+        // Safety timeout — if getDailyJoin doesn't return within 15s, surface
+        // an error instead of leaving the spinner up forever.
+        const joinPromise = getDailyJoin(appointmentId, displayName);
+        const timeoutPromise = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 15000),
+        );
+        const join = await Promise.race([joinPromise, timeoutPromise]);
 
         if (cancelled) return;
 
         if (!join || !containerRef.current) {
-          setError(t('video.couldNotStart'));
+          setError(t('video.couldNotStart') + ' (timeout or no room)');
           setLoading(false);
           return;
         }
+
 
         const call = DailyIframe.createFrame(containerRef.current, {
           showLeaveButton: true,
