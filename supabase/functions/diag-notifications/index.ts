@@ -85,12 +85,23 @@ Deno.serve(async (req) => {
     }
     report.caller = { id: callerId, email: callerEmail };
 
+    // Prefer DB-stored FCM JSON (admin can update via Settings UI), fallback to env secret.
+    let fcmJson: string | null = FCM_SA_JSON ?? null;
+    let fcmSource: 'db' | 'env' | 'none' = FCM_SA_JSON ? 'env' : 'none';
+    try {
+      const { data: row } = await admin
+        .from('app_secrets').select('value').eq('key', 'FCM_SERVICE_ACCOUNT_JSON').maybeSingle();
+      if (row?.value) { fcmJson = row.value as string; fcmSource = 'db'; }
+    } catch { /* ignore */ }
+    report.fcm.secret_present = !!fcmJson;
+    report.fcm.source = fcmSource;
+
     // ── FCM ──
-    if (!FCM_SA_JSON) {
-      report.fcm.error = 'FCM_SERVICE_ACCOUNT_JSON secret is NOT set';
+    if (!fcmJson) {
+      report.fcm.error = 'FCM_SERVICE_ACCOUNT_JSON not set (neither DB row nor env secret)';
     } else {
       try {
-        const sa = JSON.parse(FCM_SA_JSON);
+        const sa = JSON.parse(fcmJson);
         report.fcm.top_level_keys = Object.keys(sa);
         report.fcm.type = sa.type;
         report.fcm.project_id = sa.project_id;
