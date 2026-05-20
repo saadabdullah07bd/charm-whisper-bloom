@@ -16,11 +16,12 @@ export async function getDailyJoin(
     const { data, error } = await supabase.functions.invoke('daily-room', {
       body: { appointmentId, displayName },
     });
+    const d = (data ?? {}) as any;
     if (error) {
-      console.error('Daily room error:', error);
-      throw error;
+      const serverMsg = d?.error || (error as any)?.message || 'Daily room request failed';
+      console.error('Daily room error:', serverMsg, d);
+      throw new Error(serverMsg);
     }
-    const d = data as any;
     if (!d?.url) throw new Error(d?.error || 'Daily room response did not include a URL');
     return { url: d.url, token: d.token ?? null, room: d.room, isDoctor: !!d.isDoctor };
   } catch (err) {
