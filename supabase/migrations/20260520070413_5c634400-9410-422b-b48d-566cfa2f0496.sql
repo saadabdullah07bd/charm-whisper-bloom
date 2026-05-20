@@ -1,0 +1,1 @@
+UPDATE public.appointments SET appointment_date = CURRENT_DATE, time_slot = '2:00 PM', status = 'confirmed', session_ended_at = NULL, doctor_joined_at = NULL, patient_joined_at = NULL, doctor_left_at = NULL, patient_left_at = NULL, updated_at = now() WHERE id = 'b7c818c8-ff49-4b33-89bc-dce53ba8f97b';
