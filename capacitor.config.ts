@@ -4,6 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.medhelp.app',
   appName: 'MedHelp',
   webDir: 'dist',
+  server: {
+    url: 'https://fafdf217-8775-4149-b126-e3c11fa832e1.lovableproject.com?forceHideBadge=true',
+    cleartext: true,
+  },
   android: {
     allowMixedContent: true,
   },
