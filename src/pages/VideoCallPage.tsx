@@ -99,7 +99,13 @@ export default function VideoCallPage() {
   };
 
   useEffect(() => {
-    if (!appointmentId || roleLoading || !role || !containerRef.current) {
+    if (!appointmentId || roleLoading || !containerRef.current) {
+      return;
+    }
+
+    if (!role) {
+      setError('Your account role was not found. Please sign out and sign in again.');
+      setLoading(false);
       return;
     }
 
@@ -121,6 +127,7 @@ export default function VideoCallPage() {
 
         // Safety timeout — if getDailyJoin doesn't return within 15s, surface
         // an error instead of leaving the spinner up forever.
+        console.info('[video] requesting Daily room', { appointmentId, role });
         const joinPromise = getDailyJoin(appointmentId, displayName);
         const timeoutPromise = new Promise<null>((resolve) =>
           setTimeout(() => resolve(null), 15000),
@@ -134,6 +141,8 @@ export default function VideoCallPage() {
           setLoading(false);
           return;
         }
+
+        console.info('[video] Daily room ready', { room: join.room, isDoctor: join.isDoctor });
 
 
         const call = DailyIframe.createFrame(containerRef.current, {
