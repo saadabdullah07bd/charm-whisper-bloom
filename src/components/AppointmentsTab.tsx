@@ -507,8 +507,8 @@ const AppointmentsTab: React.FC = () => {
                         </button>
                       </>
                     )}
-                     {['confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status) && (() => {
-                       const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(nowTick), { status: apt.status });
+                     {(['confirmed', 'in_call', 'awaiting_prescription', 'pending'].includes(apt.status) || ALWAYS_JOIN_PATIENT_IDS.has(apt.patient_id || '')) && (() => {
+                       const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(nowTick), { status: apt.status, patientId: apt.patient_id });
                        if (!w.canJoin) return null;
                        return (
                          <button onClick={() => handleJoinCall(apt)}
@@ -520,7 +520,7 @@ const AppointmentsTab: React.FC = () => {
                        );
                      })()}
                     {['confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status) && (() => {
-                      const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(nowTick), { status: apt.status });
+                      const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(nowTick), { status: apt.status, patientId: apt.patient_id });
                       // End Session only visible while the 30-min window is open.
                       if (!w.canJoin) return null;
                       return (
