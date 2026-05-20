@@ -60,23 +60,20 @@ export function getJoinWindowState(
     return { canJoin: false, ended: true, endedEarly: !!options.sessionEndedAt, msUntilStart: 0, isReminderTime: false, label: 'Session ended' };
   }
 
+  // Always allow joining for confirmed/pending appointments — no time window.
   if (nowMs < startMs) {
     const msUntil = startMs - nowMs;
     const mins = Math.ceil(msUntil / 60000);
     const isReminderTime = msUntil <= REMINDER_LEAD_MS;
-    // Open the join window up to 24 hours before the scheduled start so
-    // doctor and patient can connect early (covers same-day testing).
-    if (msUntil <= 24 * 60 * 60 * 1000) {
-      return { canJoin: true, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime, label: `Ready · ${mins} min to start` };
-    }
     const label = mins >= 60
-      ? `Starts in ${Math.floor(mins / 60)}h ${mins % 60}m`
-      : `Starts in ${mins} min`;
-    return { canJoin: false, ended: false, endedEarly: false, msUntilStart: msUntil, isReminderTime, label };
+      ? `Ready · starts in ${Math.floor(mins / 60)}h ${mins % 60}m`
+      : `Ready · starts in ${mins} min`;
+    return { canJoin: true, ended: false, endedEarly: false, msUntilStart: msUntil, isReminderTime, label };
   }
   if (nowMs <= endMs) {
     const remaining = Math.ceil((endMs - nowMs) / 60000);
     return { canJoin: true, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime: false, label: `Live · ${remaining} min remaining` };
   }
-  return { canJoin: false, ended: true, endedEarly: false, msUntilStart: 0, isReminderTime: false, label: 'Session ended' };
+  // Past the scheduled end — still allow joining (no auto-close).
+  return { canJoin: true, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime: false, label: 'Start call' };
 }
