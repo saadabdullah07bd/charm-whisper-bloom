@@ -91,11 +91,21 @@ Deno.serve(async (req) => {
     } else {
       try {
         const sa = JSON.parse(FCM_SA_JSON);
+        report.fcm.top_level_keys = Object.keys(sa);
+        report.fcm.type = sa.type;
         report.fcm.project_id = sa.project_id;
         report.fcm.client_email = sa.client_email;
         report.fcm.has_private_key = !!sa.private_key;
-        const token = await getFcmAccessToken(sa);
-        report.fcm.access_token_ok = !!token;
+        report.fcm.private_key_starts_with = typeof sa.private_key === 'string' ? sa.private_key.slice(0, 30) : null;
+        if (sa.type !== 'service_account') {
+          report.fcm.hint = `Wrong file. Got type="${sa.type}". You need a Firebase service-account JSON (Project Settings → Service accounts → Generate new private key). It must have type="service_account" and project_id/client_email/private_key fields.`;
+        } else if (!sa.project_id || !sa.private_key || !sa.client_email) {
+          report.fcm.hint = 'Service-account JSON is missing required fields (project_id / client_email / private_key).';
+        }
+        if (sa.type === 'service_account' && sa.private_key && sa.client_email) {
+          const token = await getFcmAccessToken(sa);
+          report.fcm.access_token_ok = !!token;
+        }
 
         const { data: tokenRows } = await admin
           .from('device_push_tokens').select('token, platform, updated_at')
