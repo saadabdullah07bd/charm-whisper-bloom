@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { sendAppointmentEmail } from '@/lib/appointmentEmail';
 import { notifyUser, getPatientUserId } from '@/lib/push';
-import { getJoinWindowState } from '@/lib/appointmentWindow';
+import { getJoinWindowState, ALWAYS_JOIN_PATIENT_IDS } from '@/lib/appointmentWindow';
 import { showBrowserNotification } from '@/lib/notifications';
 import { canDoctorModifyAppointment, getClinicTodayDateString, getEffectiveAppointmentStatus, shouldAutoCompleteAppointment } from '@/lib/appointmentRules';
 interface Appointment {
