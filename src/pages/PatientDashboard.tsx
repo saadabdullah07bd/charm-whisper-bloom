@@ -735,7 +735,7 @@ const PatientDashboard: React.FC = () => {
 
         <div className="flex-1 min-w-0">
       {/* ── Mobile Glass Header ── */}
-      <header className="md:hidden sticky top-0 z-30 border-b border-border/20" style={{ background: 'hsl(var(--background)/0.6)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)', paddingTop: 'env(safe-area-inset-top)' }}>
+      <header className="md:hidden sticky top-0 z-30 border-b border-border/20" style={{ background: 'hsl(var(--background)/0.6)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
         <div className="max-w-lg mx-auto px-5 py-2.5 flex items-center min-h-[60px]">
           <div className="min-w-0">
             <h1 className="text-base font-semibold tracking-tight leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>Shifora</h1>
