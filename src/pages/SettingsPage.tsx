@@ -63,6 +63,13 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
   const [uploadingLetterhead, setUploadingLetterhead] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const letterheadInputRef = useRef<HTMLInputElement>(null);
+  const { role } = useUserRole();
+
+  // FCM service-account JSON admin
+  const [fcmJsonText, setFcmJsonText] = useState('');
+  const [fcmSavedAt, setFcmSavedAt] = useState<string | null>(null);
+  const [fcmProjectId, setFcmProjectId] = useState<string | null>(null);
+  const [fcmSaving, setFcmSaving] = useState(false);
 
   const { mode, setMode, accent, setAccent, gradient, setGradient, fontScale, setFontScale } = useThemeFull();
 
