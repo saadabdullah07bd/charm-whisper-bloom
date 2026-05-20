@@ -262,7 +262,10 @@ const Index: React.FC = () => {
       {/* Main content area */}
       <div className="flex-1 min-w-0 flex flex-col min-h-screen">
         {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 z-30 glass-header border-b border-border/50 px-4 py-3 flex items-center justify-between">
+        <header
+          className="md:hidden sticky top-0 z-30 glass-header border-b border-border/50 px-4 py-3 flex items-center justify-between"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
+        >
           <div className="min-w-0">
             <p className="text-base font-semibold truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>Shifora</p>
             <p className="text-[11px] text-muted-foreground truncate">

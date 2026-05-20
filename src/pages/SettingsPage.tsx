@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type DoctorSettings, type Patient, type Prescription } from '@/types/medical';
-import { Settings, User, Upload, Image as ImageIcon, Trash2, Palette, Sun, Moon, Monitor, Check, ChevronDown, LogOut, Globe, KeyRound } from 'lucide-react';
+import { Settings, User, Upload, Image as ImageIcon, Trash2, Palette, Sun, Moon, Monitor, Check, ChevronDown, LogOut, Globe } from 'lucide-react';
 import { useThemeFull, type ThemeMode, type ThemeAccent, type ThemeGradient, type FontScale } from '@/lib/theme';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { LANG_STORAGE_KEY } from '@/lib/i18n';
-import { useUserRole } from '@/hooks/useUserRole';
+
 
 interface Props {
   settings: DoctorSettings;
@@ -63,13 +63,8 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
   const [uploadingLetterhead, setUploadingLetterhead] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const letterheadInputRef = useRef<HTMLInputElement>(null);
-  const { role } = useUserRole();
 
-  // FCM service-account JSON admin
-  const [fcmJsonText, setFcmJsonText] = useState('');
-  const [fcmSavedAt, setFcmSavedAt] = useState<string | null>(null);
-  const [fcmProjectId, setFcmProjectId] = useState<string | null>(null);
-  const [fcmSaving, setFcmSaving] = useState(false);
+
 
   const { mode, setMode, accent, setAccent, gradient, setGradient, fontScale, setFontScale } = useThemeFull();
 
@@ -90,68 +85,6 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
     })();
   }, []);
 
-  // Load existing FCM JSON metadata (doctor only) — show project_id and last-updated,
-  // but never display the private key. User pastes a new JSON to overwrite.
-  useEffect(() => {
-    if (role !== 'doctor') return;
-    (async () => {
-      const { data } = await supabase
-        .from('app_secrets')
-        .select('value, updated_at')
-        .eq('key', 'FCM_SERVICE_ACCOUNT_JSON')
-        .maybeSingle();
-      if (data?.value) {
-        try {
-          const parsed = JSON.parse(data.value as string);
-          setFcmProjectId(parsed.project_id ?? null);
-        } catch { setFcmProjectId(null); }
-        setFcmSavedAt(data.updated_at as string);
-      }
-    })();
-  }, [role]);
-
-  const handleSaveFcmJson = async () => {
-    const text = fcmJsonText.trim();
-    if (!text) { toast({ title: 'Paste the JSON first', variant: 'destructive' }); return; }
-    let parsed: any;
-    try { parsed = JSON.parse(text); }
-    catch (e: any) {
-      toast({ title: 'Invalid JSON', description: e?.message ?? 'Could not parse', variant: 'destructive' });
-      return;
-    }
-    if (parsed.type !== 'service_account') {
-      toast({
-        title: 'Wrong file',
-        description: `Got type="${parsed.type ?? '—'}". Use Firebase Console → Project Settings → Service accounts → Generate new private key.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    const missing = ['project_id', 'client_email', 'private_key'].filter((k) => !parsed[k]);
-    if (missing.length) {
-      toast({ title: 'Missing fields', description: `JSON missing: ${missing.join(', ')}`, variant: 'destructive' });
-      return;
-    }
-    setFcmSaving(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from('app_secrets')
-      .upsert({
-        key: 'FCM_SERVICE_ACCOUNT_JSON',
-        value: text,
-        updated_by: userData.user?.id ?? null,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'key' });
-    setFcmSaving(false);
-    if (error) {
-      toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
-      return;
-    }
-    setFcmProjectId(parsed.project_id);
-    setFcmSavedAt(new Date().toISOString());
-    setFcmJsonText('');
-    toast({ title: 'Saved', description: `FCM service account updated (project: ${parsed.project_id})` });
-  };
 
   const handleSave = () => {
     onSave(form);
@@ -424,69 +357,6 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
         {saved ? t('settings.settingsSaved') : t('settings.saveSettings')}
       </button>
 
-      {/* FCM service-account JSON — doctor-only admin UI */}
-      {role === 'doctor' && (
-        <div className="glass-card p-5 space-y-3 mt-2">
-          <h2 className="text-sm font-semibold flex items-center gap-1.5">
-            <KeyRound size={14} /> Firebase service-account (FCM)
-          </h2>
-          <p className="text-xs text-muted-foreground -mt-1">
-            Paste the JSON from Firebase Console → ⚙️ Project Settings → <b>Service accounts</b> → <b>Generate new private key</b>.
-            Push notifications use this credential. The private key is stored in your database (RLS: doctor-only) and never shown back.
-          </p>
-          <div className="text-xs text-muted-foreground">
-            Current: <span className="font-mono">{fcmProjectId ?? '— not set —'}</span>
-            {fcmSavedAt && <span className="ml-2">· updated {new Date(fcmSavedAt).toLocaleString()}</span>}
-          </div>
-          <textarea
-            value={fcmJsonText}
-            onChange={(e) => setFcmJsonText(e.target.value)}
-            placeholder='{"type":"service_account","project_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...","client_email":"...","..."}'
-            spellCheck={false}
-            rows={8}
-            className="medical-input w-full font-mono text-[11px] leading-snug"
-          />
-          <button
-            onClick={handleSaveFcmJson}
-            disabled={fcmSaving || !fcmJsonText.trim()}
-            className="w-full rounded-xl py-3 font-medium text-sm bg-primary text-primary-foreground hover:opacity-90 btn-press disabled:opacity-50"
-          >
-            {fcmSaving ? 'Saving…' : 'Save service-account JSON'}
-          </button>
-        </div>
-      )}
-
-      {/* Notification diagnostic — runs FCM + Resend test and shows raw result */}
-      <div className="glass-card p-5 space-y-3 mt-2">
-        <h2 className="text-sm font-semibold">🔔 Notification diagnostic</h2>
-        <p className="text-xs text-muted-foreground -mt-1">
-          Sends a real push to this device's registered token and a test email to your account email. Use this if pushes or emails are not arriving.
-        </p>
-        <button
-          onClick={async () => {
-            toast({ title: 'Running diagnostic...' });
-            const { data, error } = await supabase.functions.invoke('diag-notifications', { body: { email: true } });
-            if (error) {
-              toast({ title: 'Diagnostic failed', description: String(error.message ?? error), variant: 'destructive' });
-              return;
-            }
-            console.log('[diag-notifications]', data);
-            const r = data as any;
-            const summary = [
-              `FCM secret: ${r?.fcm?.secret_present ? '✅' : '❌'}`,
-              `FCM project: ${r?.fcm?.project_id ?? '—'}`,
-              `OAuth token: ${r?.fcm?.access_token_ok ? '✅' : '❌'}`,
-              `Tokens in DB: ${r?.fcm?.tokens_in_db ?? 0}`,
-              `Sent OK: ${(r?.tokens ?? []).filter((t: any) => t.ok).length}/${(r?.tokens ?? []).length}`,
-              `Resend: ${r?.email_test?.ok ? '✅ sent' : (r?.email_test?.error ?? r?.email_test?.response?.message ?? '—')}`,
-            ].join('\n');
-            alert(summary + '\n\nFull report in console.');
-          }}
-          className="w-full rounded-xl py-3 font-medium text-sm bg-primary text-primary-foreground hover:opacity-90 btn-press"
-        >
-          Run notification test
-        </button>
-      </div>
 
       {/* Account section — Sign out at the very bottom */}
       <div className="glass-card p-5 space-y-3 mt-2">
