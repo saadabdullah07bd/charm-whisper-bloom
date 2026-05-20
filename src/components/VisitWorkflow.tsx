@@ -224,9 +224,12 @@ const VisitWorkflow: React.FC<Props> = ({ patient, doctorSettings, existingVisit
             </button>
           )}
         </div>
-        <div className="rounded-xl border border-dashed border-border/50 p-10 text-center text-sm text-muted-foreground">
-          Prescription saved. Upload the prescription PDF from Stage 3 so the patient can download it.
+        <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-900/10 p-10 text-center space-y-2">
+          <div className="text-3xl">✅</div>
+          <div className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Prescription saved successfully</div>
+          <div className="text-xs text-muted-foreground">The patient can now view it from their portal.</div>
         </div>
+
       </div>
     );
   }
