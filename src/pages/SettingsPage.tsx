@@ -85,68 +85,6 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
     })();
   }, []);
 
-  // Load existing FCM JSON metadata (doctor only) — show project_id and last-updated,
-  // but never display the private key. User pastes a new JSON to overwrite.
-  useEffect(() => {
-    if (role !== 'doctor') return;
-    (async () => {
-      const { data } = await supabase
-        .from('app_secrets')
-        .select('value, updated_at')
-        .eq('key', 'FCM_SERVICE_ACCOUNT_JSON')
-        .maybeSingle();
-      if (data?.value) {
-        try {
-          const parsed = JSON.parse(data.value as string);
-          setFcmProjectId(parsed.project_id ?? null);
-        } catch { setFcmProjectId(null); }
-        setFcmSavedAt(data.updated_at as string);
-      }
-    })();
-  }, [role]);
-
-  const handleSaveFcmJson = async () => {
-    const text = fcmJsonText.trim();
-    if (!text) { toast({ title: 'Paste the JSON first', variant: 'destructive' }); return; }
-    let parsed: any;
-    try { parsed = JSON.parse(text); }
-    catch (e: any) {
-      toast({ title: 'Invalid JSON', description: e?.message ?? 'Could not parse', variant: 'destructive' });
-      return;
-    }
-    if (parsed.type !== 'service_account') {
-      toast({
-        title: 'Wrong file',
-        description: `Got type="${parsed.type ?? '—'}". Use Firebase Console → Project Settings → Service accounts → Generate new private key.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    const missing = ['project_id', 'client_email', 'private_key'].filter((k) => !parsed[k]);
-    if (missing.length) {
-      toast({ title: 'Missing fields', description: `JSON missing: ${missing.join(', ')}`, variant: 'destructive' });
-      return;
-    }
-    setFcmSaving(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from('app_secrets')
-      .upsert({
-        key: 'FCM_SERVICE_ACCOUNT_JSON',
-        value: text,
-        updated_by: userData.user?.id ?? null,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'key' });
-    setFcmSaving(false);
-    if (error) {
-      toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
-      return;
-    }
-    setFcmProjectId(parsed.project_id);
-    setFcmSavedAt(new Date().toISOString());
-    setFcmJsonText('');
-    toast({ title: 'Saved', description: `FCM service account updated (project: ${parsed.project_id})` });
-  };
 
   const handleSave = () => {
     onSave(form);
