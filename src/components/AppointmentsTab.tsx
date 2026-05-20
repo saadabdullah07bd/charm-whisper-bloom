@@ -87,7 +87,7 @@ const AppointmentsTab: React.FC = () => {
   }, []);
 
   const handleJoinCall = (apt: Appointment) => {
-    const w = getJoinWindowState(apt.appointment_date, apt.time_slot);
+    const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(), { status: apt.status, patientId: apt.patient_id });
     if (w.ended) {
       toast.error(t('apptTab.callWindowEnded'));
       return;
