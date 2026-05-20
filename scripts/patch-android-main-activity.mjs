@@ -25,7 +25,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.PermissionRequest;
-import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
 import androidx.core.app.ActivityCompat;
