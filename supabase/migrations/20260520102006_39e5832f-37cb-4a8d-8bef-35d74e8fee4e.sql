@@ -1,0 +1,1 @@
+INSERT INTO public.appointments (patient_id, patient_name, patient_email, patient_phone, appointment_date, time_slot, status, chief_complaint) VALUES ('44857ea3-ba82-4825-bca4-d6e6013e777e', 'Rahim Ahmed', 'abdullahsaad0708@gmail.com', '01712-345678', CURRENT_DATE, '3:00 PM', 'confirmed', 'Video call test');
