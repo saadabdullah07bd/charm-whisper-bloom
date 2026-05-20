@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://anew-coding.lovable.app/sitemap.xml
+Sitemap: https://medhelp.app/sitemap.xml

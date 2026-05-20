@@ -1,6 +1,6 @@
 // Lightweight per-page meta helper for the SPA. Updates title, description,
 // canonical, and og:* tags for client-rendered routes (Privacy, Terms, etc.).
-const BASE = "https://anew-coding.lovable.app";
+const BASE = "https://medhelp.app";
 
 function upsertMeta(selector: string, attr: "name" | "property", key: string, content: string) {
   let el = document.head.querySelector<HTMLMetaElement>(selector);
