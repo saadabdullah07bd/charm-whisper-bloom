@@ -97,6 +97,7 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(ShiforaMediaPermissionsPlugin.class);
         super.onCreate(savedInstanceState);
         WebView webView = getBridge().getWebView();
         // Daily.co / WebRTC inside the in-app WebView needs us to grant camera+mic
@@ -108,27 +109,6 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
                 runOnUiThread(() -> handleWebPermissionRequest(request));
             }
         });
-        requestAppStartupPermissions();
-    }
-
-    private void requestAppStartupPermissions() {
-        java.util.List<String> toAsk = new java.util.ArrayList<>();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            toAsk.add(Manifest.permission.CAMERA);
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED) {
-            toAsk.add(Manifest.permission.RECORD_AUDIO);
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                        != PackageManager.PERMISSION_GRANTED) {
-            toAsk.add(Manifest.permission.POST_NOTIFICATIONS);
-        }
-        if (!toAsk.isEmpty()) {
-            ActivityCompat.requestPermissions(this, toAsk.toArray(new String[0]), RC_MEDIA_PERMS);
-        }
     }
 
     private void handleWebPermissionRequest(PermissionRequest request) {
