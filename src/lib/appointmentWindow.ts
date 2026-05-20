@@ -3,6 +3,11 @@
 export const JOIN_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 export const REMINDER_LEAD_MS = 10 * 60 * 1000; // 10 minutes before start
 
+/** Test patients for whom the Start Video Call button is ALWAYS available. */
+export const ALWAYS_JOIN_PATIENT_IDS = new Set<string>([
+  '44857ea3-ba82-4825-bca4-d6e6013e777e', // Rahim Ahmed (daily.co test account)
+]);
+
 export function parseAppointmentDateTime(date: string, time: string): Date | null {
   const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
   if (!match) return null;
@@ -39,10 +44,15 @@ export function getJoinWindowState(
   date: string,
   time: string,
   now: Date = new Date(),
-  options: { sessionEndedAt?: string | null; status?: string | null } = {},
+  options: { sessionEndedAt?: string | null; status?: string | null; patientId?: string | null } = {},
 ): JoinWindowState {
+  const alwaysJoin = !!(options.patientId && ALWAYS_JOIN_PATIENT_IDS.has(options.patientId));
+
   const start = parseAppointmentDateTime(date, time);
   if (!start) {
+    if (alwaysJoin) {
+      return { canJoin: true, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime: false, label: 'Start call' };
+    }
     return { canJoin: false, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime: false, label: '' };
   }
   const startMs = start.getTime();
@@ -56,7 +66,7 @@ export function getJoinWindowState(
     options.status === 'cancelled' ||
     options.status === 'rejected';
 
-  if (manuallyEnded) {
+  if (manuallyEnded && !alwaysJoin) {
     return { canJoin: false, ended: true, endedEarly: !!options.sessionEndedAt, msUntilStart: 0, isReminderTime: false, label: 'Session ended' };
   }
 

@@ -28,7 +28,7 @@ import { bn as bnLocale, enUS as enLocale } from 'date-fns/locale';
 import { sendAppointmentEmail, getDoctorEmail } from '@/lib/appointmentEmail';
 import { notifyUser, getDoctorUserId } from '@/lib/push';
 import { useThemeFull } from '@/lib/theme';
-import { getJoinWindowState } from '@/lib/appointmentWindow';
+import { getJoinWindowState, ALWAYS_JOIN_PATIENT_IDS } from '@/lib/appointmentWindow';
 import { canPatientBookSlot, canPatientModifyAppointment, getClinicTodayDateString, getEffectiveAppointmentStatus, shouldAutoCompleteAppointment } from '@/lib/appointmentRules';
 // downloadPrescriptionImage removed — patients now download the uploaded PDF directly.
 
@@ -48,6 +48,7 @@ interface AppointmentRecord {
   chief_complaint: string | null; created_at: string;
   cancel_reason: string | null; reschedule_date: string | null; reschedule_time_slot: string | null;
   google_meet_link?: string | null;
+  patient_id?: string | null;
 }
 
 interface VisitRecord {
@@ -1175,10 +1176,10 @@ const AppointmentsSection: React.FC<{
             </div>
           )}
 
-          {(['pending', 'confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status)) && props.cancellingAptId !== apt.id && (
+          {(['pending', 'confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status) || ALWAYS_JOIN_PATIENT_IDS.has(apt.patient_id || '')) && props.cancellingAptId !== apt.id && (
             <div className="flex flex-wrap gap-2 pt-0.5">
-              {['confirmed', 'in_call', 'awaiting_prescription'].includes(apt.status) && (() => {
-                const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(), { status: apt.status });
+              {(['confirmed', 'in_call', 'awaiting_prescription', 'pending'].includes(apt.status) || ALWAYS_JOIN_PATIENT_IDS.has(apt.patient_id || '')) && (() => {
+                const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(), { status: apt.status, patientId: apt.patient_id });
                 if (w.canJoin) {
                   return (
                     <button
