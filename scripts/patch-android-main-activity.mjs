@@ -201,6 +201,16 @@ if (currentMain.trim() !== desiredMainActivity.trim()) {
   console.log('[cap:patch-main] MainActivity already patched.');
 }
 
+const currentMediaPlugin = existsSync(mediaPermissionsPluginPath)
+  ? readFileSync(mediaPermissionsPluginPath, 'utf8')
+  : '';
+if (currentMediaPlugin.trim() !== desiredMediaPermissionsPlugin.trim()) {
+  writeFileSync(mediaPermissionsPluginPath, desiredMediaPermissionsPlugin);
+  console.log('[cap:patch-main] Patched ShiforaMediaPermissions native plugin.');
+} else {
+  console.log('[cap:patch-main] ShiforaMediaPermissions native plugin already patched.');
+}
+
 // ──────────────────────────────────────────────────────────────────────
 // 2) AndroidManifest.xml — declare CAMERA / RECORD_AUDIO / etc.
 // ──────────────────────────────────────────────────────────────────────
