@@ -112,12 +112,19 @@ Deno.serve(async (req) => {
       callerIsDoctor = !!roleRow;
     }
 
-    if (!FCM_SA_JSON) {
+    // Prefer DB-stored FCM JSON (admin can update via Settings UI), fallback to env secret.
+    let fcmJson: string | null = FCM_SA_JSON ?? null;
+    try {
+      const { data: row } = await admin
+        .from('app_secrets').select('value').eq('key', 'FCM_SERVICE_ACCOUNT_JSON').maybeSingle();
+      if (row?.value) fcmJson = row.value as string;
+    } catch { /* ignore */ }
+    if (!fcmJson) {
       return new Response(JSON.stringify({ error: 'FCM_SERVICE_ACCOUNT_JSON not set' }), {
         status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const sa: ServiceAccount = JSON.parse(FCM_SA_JSON);
+    const sa: ServiceAccount = JSON.parse(fcmJson);
 
     const body = await req.json().catch(() => null);
     if (!body || typeof body.title !== 'string' || typeof body.body !== 'string') {
