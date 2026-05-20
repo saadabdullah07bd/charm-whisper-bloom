@@ -1333,7 +1333,8 @@ const PrescriptionsTab: React.FC<{ prescriptions: PrescriptionRecord[]; onView: 
   return (
     <div className="space-y-3">
       {finalRx.map(rx => (
-        <GlassCard key={rx.id} className="p-4 space-y-2 cursor-pointer" onClick={() => onView(rx)}>
+        <div key={rx.id} onClick={() => onView(rx)} className="cursor-pointer">
+        <GlassCard className="p-4 space-y-2">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-semibold truncate">Prescription</p>
