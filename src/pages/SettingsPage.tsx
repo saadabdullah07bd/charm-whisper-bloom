@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type DoctorSettings, type Patient, type Prescription } from '@/types/medical';
-import { Settings, User, Upload, Image as ImageIcon, Trash2, Palette, Sun, Moon, Monitor, Check, ChevronDown, LogOut, Globe } from 'lucide-react';
+import { Settings, User, Upload, Image as ImageIcon, Trash2, Palette, Sun, Moon, Monitor, Check, ChevronDown, LogOut, Globe, KeyRound } from 'lucide-react';
 import { useThemeFull, type ThemeMode, type ThemeAccent, type ThemeGradient, type FontScale } from '@/lib/theme';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { LANG_STORAGE_KEY } from '@/lib/i18n';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Props {
   settings: DoctorSettings;
