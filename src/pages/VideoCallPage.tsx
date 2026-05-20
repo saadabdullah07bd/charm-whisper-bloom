@@ -222,7 +222,8 @@ export default function VideoCallPage() {
       } catch (err) {
         console.error('Daily join failed:', err);
         if (!cancelled) {
-          setError(t('video.couldNotConnect'));
+          const msg = err instanceof Error ? err.message : String(err);
+          setError(`${t('video.couldNotConnect')} — ${msg}`);
           setLoading(false);
         }
       }
