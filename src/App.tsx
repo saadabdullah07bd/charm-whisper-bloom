@@ -11,13 +11,12 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import VideoCallPage from "./pages/VideoCallPage";
 import NativeStatusBarSync from "./components/NativeStatusBarSync";
-import { useEffect } from "react";
-import { bootstrapPermissions } from "./lib/permissionsBootstrap";
+// Permission bootstrap moved to main.tsx (`requestNotificationPermissionOnStart`).
+// Camera + microphone are requested per-call from VideoCallPage.
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  useEffect(() => { void bootstrapPermissions(); }, []);
   return (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
