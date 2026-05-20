@@ -44,10 +44,15 @@ export function getJoinWindowState(
   date: string,
   time: string,
   now: Date = new Date(),
-  options: { sessionEndedAt?: string | null; status?: string | null } = {},
+  options: { sessionEndedAt?: string | null; status?: string | null; patientId?: string | null } = {},
 ): JoinWindowState {
+  const alwaysJoin = !!(options.patientId && ALWAYS_JOIN_PATIENT_IDS.has(options.patientId));
+
   const start = parseAppointmentDateTime(date, time);
   if (!start) {
+    if (alwaysJoin) {
+      return { canJoin: true, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime: false, label: 'Start call' };
+    }
     return { canJoin: false, ended: false, endedEarly: false, msUntilStart: 0, isReminderTime: false, label: '' };
   }
   const startMs = start.getTime();
@@ -61,7 +66,7 @@ export function getJoinWindowState(
     options.status === 'cancelled' ||
     options.status === 'rejected';
 
-  if (manuallyEnded) {
+  if (manuallyEnded && !alwaysJoin) {
     return { canJoin: false, ended: true, endedEarly: !!options.sessionEndedAt, msUntilStart: 0, isReminderTime: false, label: 'Session ended' };
   }
 
