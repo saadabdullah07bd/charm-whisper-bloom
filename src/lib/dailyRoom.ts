@@ -18,13 +18,13 @@ export async function getDailyJoin(
     });
     if (error) {
       console.error('Daily room error:', error);
-      return null;
+      throw error;
     }
     const d = data as any;
-    if (!d?.url) return null;
+    if (!d?.url) throw new Error(d?.error || 'Daily room response did not include a URL');
     return { url: d.url, token: d.token ?? null, room: d.room, isDoctor: !!d.isDoctor };
   } catch (err) {
     console.error('Daily room request failed:', err);
-    return null;
+    throw err;
   }
 }

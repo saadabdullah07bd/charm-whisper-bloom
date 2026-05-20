@@ -25,17 +25,8 @@ export async function bootstrapPermissions(): Promise<void> {
     console.warn('[perms] notification request failed', e);
   }
 
-  // 2) Camera + microphone — only pre-warm on native (Capacitor WebView),
-  //    where our patched MainActivity translates this into the real OS
-  //    permission dialog. On web we skip it to avoid an unexpected prompt
-  //    before the user actually opens a video call.
-  if (Capacitor.isNativePlatform()) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      stream.getTracks().forEach((t) => t.stop());
-      console.log('[perms] camera + microphone granted');
-    } catch (e) {
-      console.warn('[perms] camera/mic permission deferred:', e);
-    }
-  }
+  // 2) Camera + microphone are requested natively in MainActivity on app open.
+  // Do not call getUserMedia() here: Android WebView can cache a web-origin
+  // denial if this runs outside the actual call flow, even after OS permission
+  // has already been granted.
 }

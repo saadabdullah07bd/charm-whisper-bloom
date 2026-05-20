@@ -25,13 +25,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.PermissionRequest;
-import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebChromeClient;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginHandle;
 
@@ -56,12 +56,33 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
         // Daily.co / WebRTC inside the in-app WebView needs us to grant camera+mic
         // resources when getUserMedia() fires. Without this, the user sees the
         // generic "unblock your camera and microphone — tap the lock icon" message.
-        webView.setWebChromeClient(new WebChromeClient() {
+        webView.setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> handleWebPermissionRequest(request));
             }
         });
+        requestAppStartupPermissions();
+    }
+
+    private void requestAppStartupPermissions() {
+        java.util.List<String> toAsk = new java.util.ArrayList<>();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            toAsk.add(Manifest.permission.CAMERA);
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            toAsk.add(Manifest.permission.RECORD_AUDIO);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                        != PackageManager.PERMISSION_GRANTED) {
+            toAsk.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+        if (!toAsk.isEmpty()) {
+            ActivityCompat.requestPermissions(this, toAsk.toArray(new String[0]), RC_MEDIA_PERMS);
+        }
     }
 
     private void handleWebPermissionRequest(PermissionRequest request) {
@@ -164,6 +185,7 @@ if (existsSync(manifestPath)) {
   const needed = [
     '<uses-permission android:name="android.permission.CAMERA" />',
     '<uses-permission android:name="android.permission.RECORD_AUDIO" />',
+    '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
     '<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />',
     '<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />',
     '<uses-feature android:name="android.hardware.camera" android:required="false" />',
