@@ -28,7 +28,7 @@ import { bn as bnLocale, enUS as enLocale } from 'date-fns/locale';
 import { sendAppointmentEmail, getDoctorEmail } from '@/lib/appointmentEmail';
 import { notifyUser, getDoctorUserId } from '@/lib/push';
 import { useThemeFull } from '@/lib/theme';
-import { getJoinWindowState } from '@/lib/appointmentWindow';
+import { getJoinWindowState, ALWAYS_JOIN_PATIENT_IDS } from '@/lib/appointmentWindow';
 import { canPatientBookSlot, canPatientModifyAppointment, getClinicTodayDateString, getEffectiveAppointmentStatus, shouldAutoCompleteAppointment } from '@/lib/appointmentRules';
 // downloadPrescriptionImage removed — patients now download the uploaded PDF directly.
 
