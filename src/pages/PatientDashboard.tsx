@@ -1318,34 +1318,12 @@ const VisitsTab: React.FC<{ visits: VisitRecord[] }> = ({ visits }) => {
   );
 };
 
-// ── Prescriptions Tab ──
-const PrescriptionsTab: React.FC<{ prescriptions: PrescriptionRecord[]; onView: (rx: PrescriptionRecord) => void }> = () => {
+// ── Prescriptions Tab (Rx — medicines list from prescriptions table) ──
+const PrescriptionsTab: React.FC<{ prescriptions: PrescriptionRecord[]; onView: (rx: PrescriptionRecord) => void }> = ({ prescriptions, onView }) => {
   const { t } = useTranslation();
-  const [files, setFiles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const finalRx = prescriptions.filter(p => !p.isProvisional);
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
-      const { data: pat } = await supabase.from('patients').select('id').eq('user_id', userData.user.id).maybeSingle();
-      if (!pat) { if (mounted) setLoading(false); return; }
-      const { data } = await supabase.from('prescription_files')
-        .select('*').eq('patient_id', pat.id).order('created_at', { ascending: false });
-      if (mounted) { setFiles(data ?? []); setLoading(false); }
-    })();
-    return () => { mounted = false; };
-  }, []);
-
-  const handleDownload = async (f: any) => {
-    const { data, error } = await supabase.storage.from('prescriptions').createSignedUrl(f.file_path, 3600);
-    if (error || !data) { toast.error('Cannot open file'); return; }
-    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  if (loading) return <div className="text-center py-20 text-sm text-muted-foreground">Loading…</div>;
-  if (files.length === 0) return (
+  if (finalRx.length === 0) return (
     <div className="text-center py-20">
       <FileText size={32} className="mx-auto mb-3 text-muted-foreground/20" />
       <p className="text-sm text-muted-foreground">{t("patient.noPrescriptions")}</p>
@@ -1354,20 +1332,34 @@ const PrescriptionsTab: React.FC<{ prescriptions: PrescriptionRecord[]; onView: 
 
   return (
     <div className="space-y-3">
-      {files.map(f => (
-        <GlassCard key={f.id} className="p-4 flex items-center justify-between">
-          <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-medium truncate">{f.file_name}</p>
-            <p className="text-xs text-muted-foreground">{new Date(f.created_at).toLocaleString()}</p>
+      {finalRx.map(rx => (
+        <GlassCard key={rx.id} className="p-4 space-y-2 cursor-pointer" onClick={() => onView(rx)}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-semibold truncate">Prescription</p>
+              <p className="text-xs text-muted-foreground">{new Date(rx.createdAt).toLocaleDateString()}</p>
+            </div>
+            <FileText size={18} className="text-primary shrink-0" />
           </div>
-          <button onClick={() => handleDownload(f)} className="w-10 h-10 rounded-xl flex items-center justify-center text-primary hover:bg-primary/10 transition-all">
-            <Download size={16} />
-          </button>
+          {rx.diagnosis && (
+            <p className="text-sm"><span className="text-muted-foreground">Diagnosis:</span> {rx.diagnosis}</p>
+          )}
+          {rx.medicines && rx.medicines.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {rx.medicines.map((m: any, i: number) => (
+                <span key={i} className="text-xs px-3 py-1.5 rounded-full font-medium" style={{ background: 'hsl(var(--secondary)/0.5)', color: 'hsl(var(--secondary-foreground))' }}>
+                  {m.name}{m.dosage ? ` ${m.dosage}` : ''}
+                </span>
+              ))}
+            </div>
+          )}
+          {rx.advice && <p className="text-xs text-muted-foreground"><span className="font-medium">Advice:</span> {rx.advice}</p>}
         </GlassCard>
       ))}
     </div>
   );
 };
+
 
 // ── Files Tab (Reports + Previous Prescriptions) ──
 const FileSection: React.FC<{
