@@ -344,6 +344,14 @@
       radial-gradient(at 50% 96%, var(--bg-orb-3, transparent) 0px, transparent 55%);
     background-attachment: fixed;
     overflow-x: hidden;
+    /* Safe-area insets so the app extends behind the status / nav bars
+       (edge-to-edge, set by StatusBar.setOverlaysWebView) without content
+       being covered by them. position:fixed elements are viewport-relative
+       and therefore unaffected — they should opt in via env(safe-area-inset-*)
+       themselves (see VideoCallPage and MobileBottomTabs). */
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }
 
