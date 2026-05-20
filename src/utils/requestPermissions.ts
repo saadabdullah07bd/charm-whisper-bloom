@@ -1,5 +1,4 @@
-import { Capacitor } from '@capacitor/core';
-import { registerPlugin } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Preferences } from '@capacitor/preferences';
 import { supabase } from '@/integrations/supabase/client';
