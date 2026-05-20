@@ -1448,7 +1448,8 @@ const FilesTab: React.FC<{
   };
 
   // Merge doctor-issued prescriptions + patient-uploaded previous prescriptions, sorted by date.
-  const allPrescriptionFiles = [...doctorRxFiles, ...prescriptionFiles].sort(
+  // All entries display as "Prescription" with date — original filenames are hidden from the patient view.
+  const allPrescriptionFiles = [...doctorRxFiles, ...prescriptionFiles.map(p => ({ ...p, fileName: 'Prescription' }))].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
