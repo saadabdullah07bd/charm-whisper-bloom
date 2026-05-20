@@ -109,12 +109,15 @@ bun run cap:open:android
 The video call uses the in-app WebView. The Android patch script
 (`scripts/patch-android-main-activity.mjs`) automatically:
 
-- Adds `CAMERA`, `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`, `BLUETOOTH_CONNECT`
+- Adds `CAMERA`, `RECORD_AUDIO`, `POST_NOTIFICATIONS`,
+  `MODIFY_AUDIO_SETTINGS`, `BLUETOOTH_CONNECT`
   permissions to `AndroidManifest.xml`.
 - Installs a `WebChromeClient.onPermissionRequest` hook in `MainActivity`
   that translates Daily.co's `getUserMedia()` request into a real Android
   runtime permission dialog (so users don't see the "tap the lock icon in
   your browser" message).
+- Requests camera, microphone, and notification runtime permissions when the
+  Android app opens, before the video call screen is used.
 
 The iOS patch script (`scripts/patch-ios-info-plist.mjs`) adds
 `NSCameraUsageDescription`, `NSMicrophoneUsageDescription` and
