@@ -1410,6 +1410,57 @@ const FilesTab: React.FC<{
 }> = ({ reports, uploading, onUpload, onView, onDownload, onDownloadSummary }) => {
   const reportFiles = reports.filter(r => r.category !== 'prescription');
   const prescriptionFiles = reports.filter(r => r.category === 'prescription');
+
+  // Doctor-uploaded prescription PDFs (from prescription_files table) — shown as "Prescription · <date>".
+  const [doctorRxFiles, setDoctorRxFiles] = useState<ReportRecord[]>([]);
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+      const { data: pat } = await supabase.from('patients').select('id').eq('user_id', userData.user.id).maybeSingle();
+      if (!pat) return;
+      const { data } = await supabase.from('prescription_files')
+        .select('*').eq('patient_id', pat.id).order('created_at', { ascending: false });
+      if (!mounted) return;
+      setDoctorRxFiles((data ?? []).map((f: any) => ({
+        id: `rx-${f.id}`,
+        fileName: 'Prescription',
+        filePath: f.file_path,
+        fileType: f.mime_type ?? undefined,
+        createdAt: f.created_at,
+        category: 'prescription' as const,
+        _bucket: 'prescriptions' as const,
+      } as any)));
+    };
+    load();
+    const channel = supabase
+      .channel('files-tab-rx')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prescription_files' }, () => load())
+      .subscribe();
+    return () => { mounted = false; supabase.removeChannel(channel); };
+  }, []);
+
+  const handleDoctorRxView = async (r: ReportRecord) => {
+    const { data, error } = await supabase.storage.from('prescriptions').createSignedUrl(r.filePath, 3600);
+    if (error || !data) { toast.error('Cannot open file'); return; }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // Merge doctor-issued prescriptions + patient-uploaded previous prescriptions, sorted by date.
+  const allPrescriptionFiles = [...doctorRxFiles, ...prescriptionFiles].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  const handleViewMixed = (r: ReportRecord) => {
+    if ((r as any)._bucket === 'prescriptions') return handleDoctorRxView(r);
+    return onView(r);
+  };
+  const handleDownloadMixed = (r: ReportRecord) => {
+    if ((r as any)._bucket === 'prescriptions') return handleDoctorRxView(r);
+    return onDownload(r);
+  };
+
   return (
     <div className="space-y-6">
       <button onClick={onDownloadSummary} className="w-full flex items-center justify-center gap-2 rounded-2xl py-3 px-4 text-sm font-medium text-primary-foreground transition-all" style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary)/0.85))', boxShadow: '0 4px 16px hsl(var(--primary)/0.25)' }}>
@@ -1429,15 +1480,15 @@ const FilesTab: React.FC<{
       />
 
       <FileSection
-        title="Previous Prescriptions"
-        emptyText="No previous prescriptions uploaded yet"
+        title="Prescriptions"
+        emptyText="No prescriptions yet"
         uploadLabel="Upload Previous Prescription"
         icon={<Pill size={16} className="text-primary" />}
-        files={prescriptionFiles}
+        files={allPrescriptionFiles}
         uploading={uploading}
         onUpload={(e) => onUpload(e, 'prescription')}
-        onView={onView}
-        onDownload={onDownload}
+        onView={handleViewMixed}
+        onDownload={handleDownloadMixed}
       />
     </div>
   );
