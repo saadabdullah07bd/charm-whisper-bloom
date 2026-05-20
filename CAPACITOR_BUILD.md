@@ -112,12 +112,14 @@ The video call uses the in-app WebView. The Android patch script
 - Adds `CAMERA`, `RECORD_AUDIO`, `POST_NOTIFICATIONS`,
   `MODIFY_AUDIO_SETTINGS`, `BLUETOOTH_CONNECT`
   permissions to `AndroidManifest.xml`.
+- Installs a small `ShiforaMediaPermissions` Capacitor bridge so the React app
+  can request native camera + microphone permission right before joining a call.
 - Installs a `WebChromeClient.onPermissionRequest` hook in `MainActivity`
   that translates Daily.co's `getUserMedia()` request into a real Android
   runtime permission dialog (so users don't see the "tap the lock icon in
   your browser" message).
-- Requests camera, microphone, and notification runtime permissions when the
-  Android app opens, before the video call screen is used.
+- Requests notification permission on first app launch; camera + microphone are
+  requested only when the user starts a video appointment.
 
 The iOS patch script (`scripts/patch-ios-info-plist.mjs`) adds
 `NSCameraUsageDescription`, `NSMicrophoneUsageDescription` and
