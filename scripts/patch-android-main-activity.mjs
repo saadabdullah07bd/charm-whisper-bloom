@@ -4,6 +4,7 @@ import { join } from 'node:path';
 const configText = readFileSync('capacitor.config.ts', 'utf8');
 const appId = configText.match(/appId:\s*['"]([^'"]+)['"]/)?.[1] ?? 'com.medhelp.app';
 const mainActivityPath = join('android', 'app', 'src', 'main', 'java', ...appId.split('.'), 'MainActivity.java');
+const mediaPermissionsPluginPath = join('android', 'app', 'src', 'main', 'java', ...appId.split('.'), 'ShiforaMediaPermissionsPlugin.java');
 const manifestPath = join('android', 'app', 'src', 'main', 'AndroidManifest.xml');
 
 if (!existsSync(mainActivityPath)) {
@@ -15,6 +16,51 @@ if (!existsSync(mainActivityPath)) {
 // 1) MainActivity.java — Google Sign-In hook + WebView camera/mic grant
 // ──────────────────────────────────────────────────────────────────────
 const packageLine = `package ${appId};`;
+
+const desiredMediaPermissionsPlugin = `${packageLine}
+
+import android.Manifest;
+
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
+
+@CapacitorPlugin(
+    name = "ShiforaMediaPermissions",
+    permissions = {
+        @Permission(strings = { Manifest.permission.CAMERA }, alias = "camera"),
+        @Permission(strings = { Manifest.permission.RECORD_AUDIO }, alias = "microphone")
+    }
+)
+public class ShiforaMediaPermissionsPlugin extends Plugin {
+
+    @PluginMethod
+    public void check(PluginCall call) {
+        resolveCurrentState(call);
+    }
+
+    @PluginMethod
+    public void request(PluginCall call) {
+        requestAllPermissions(call, "permissionsCallback");
+    }
+
+    @PermissionCallback
+    private void permissionsCallback(PluginCall call) {
+        resolveCurrentState(call);
+    }
+
+    private void resolveCurrentState(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("camera", getPermissionState("camera").toString());
+        ret.put("microphone", getPermissionState("microphone").toString());
+        call.resolve(ret);
+    }
+}
+`;
 
 const desiredMainActivity = `${packageLine}
 
