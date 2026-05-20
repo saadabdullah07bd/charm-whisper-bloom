@@ -77,10 +77,31 @@ Deno.serve(async (req) => {
       Authorization: `Bearer ${DAILY_API_KEY}`,
       "Content-Type": "application/json",
     };
+    // Room properties — prejoin UI is OFF because inside the Capacitor WebView
+    // Daily's prejoin "browser permission" screen incorrectly tells the user to
+    // open browser settings. Skipping prejoin lets Daily request mic/camera
+    // directly, which our WebChromeClient grants via the native OS permissions.
+    const roomProps = {
+      enable_prejoin_ui: false,
+      enable_screenshare: true,
+      enable_chat: true,
+      start_video_off: false,
+      start_audio_off: false,
+    };
+
     let getRes = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, { headers: dailyHeaders });
     let room: any = null;
     if (getRes.ok) {
       room = await getRes.json();
+      // Make sure existing rooms also have prejoin disabled — patch idempotently.
+      if (room?.config?.enable_prejoin_ui !== false) {
+        const patchRes = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+          method: "POST",
+          headers: dailyHeaders,
+          body: JSON.stringify({ properties: { enable_prejoin_ui: false } }),
+        });
+        if (patchRes.ok) room = await patchRes.json();
+      }
     } else if (getRes.status === 404) {
       // Expire 24h from now so stale rooms don't pile up.
       const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
@@ -90,14 +111,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           name: roomName,
           privacy: "public",
-          properties: {
-            exp,
-            enable_prejoin_ui: true,
-            enable_screenshare: true,
-            enable_chat: true,
-            start_video_off: false,
-            start_audio_off: false,
-          },
+          properties: { exp, ...roomProps },
         }),
       });
       if (!createRes.ok) {
