@@ -1,4 +1,4 @@
-# MedHelp — Building the Android APK
+# Shifora — Building the Android APK
 
 This project is a Vite + React web app wrapped with **Capacitor** so you can ship it as a native Android APK.
 
@@ -32,7 +32,7 @@ bun install
 In **Google Cloud Console → APIs & Services → Credentials**, you need **two** OAuth 2.0 client IDs:
 
 1. **Web application** client → this ID is **already used by Supabase**. Copy it.
-2. **Android** client → package name `com.medhelp.app`, SHA-1 fingerprint of your signing key
+2. **Android** client → package name `com.shifora.app`, SHA-1 fingerprint of your signing key
    (debug: run `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android` and copy the SHA1).
 
 Open `capacitor.config.ts` and replace `REPLACE_WITH_YOUR_WEB_CLIENT_ID...` with the **Web** client ID
@@ -43,7 +43,7 @@ Open `capacitor.config.ts` and replace `REPLACE_WITH_YOUR_WEB_CLIENT_ID...` with
 
 ## 3. Configure push notifications (Firebase)
 
-1. In **Firebase Console** → add an Android app with package `com.medhelp.app`.
+1. In **Firebase Console** → add an Android app with package `com.shifora.app`.
 2. Download `google-services.json` and place it at `android/app/google-services.json` **after step 4 below**.
 3. Capacitor's `@capacitor/push-notifications` plugin and the Capacitor Android template already wire up the Google Services Gradle plugin.
 
@@ -98,7 +98,7 @@ bun run cap:open:android
 
 ## Notes
 
-- App ID: `com.medhelp.app` — change in `capacitor.config.ts` **before** `cap add android` if you need a different one.
+- App ID: `com.shifora.app` — change in `capacitor.config.ts` **before** `cap add android` if you need a different one.
 - Network: `allowMixedContent: true` is set so Supabase HTTPS endpoints work fine; HTTP-only endpoints would also load if you ever needed them.
 - No browser hop: Google sign-in uses native Play Services and exchanges the ID token via `supabase.auth.signInWithIdToken` — fully in-app.
 

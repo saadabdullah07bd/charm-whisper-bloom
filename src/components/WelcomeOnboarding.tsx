@@ -4,7 +4,7 @@ import { Sun, Moon, Monitor, Check, Globe, Type, BookOpen, ChevronRight } from '
 import { useThemeFull, type ThemeMode, type FontScale } from '@/lib/theme';
 import { setWelcomeDone } from '@/lib/welcomePrefs';
 import i18n, { LANG_STORAGE_KEY } from '@/lib/i18n';
-import medhelpLogo from '@/assets/medhelp-logo.png';
+import shiforaLogo from '@/assets/shifora-logo.png';
 import PatientUserManual from '@/components/PatientUserManual';
 
 interface Props {
@@ -58,7 +58,7 @@ const WelcomeOnboarding: React.FC<Props> = ({ onDone }) => {
       <div className="w-full max-w-lg glass-card p-6 md:p-8 space-y-7 rounded-3xl">
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 rounded-full overflow-hidden flex items-center justify-center bg-background shadow-md">
-            <img src={medhelpLogo} alt="MedHelp" className="w-full h-full object-cover" />
+            <img src={shiforaLogo} alt="Shifora" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-2xl md:text-3xl font-display font-bold">{t('welcome.title')}</h1>
           <p className="text-sm text-muted-foreground">{t('welcome.subtitle')}</p>

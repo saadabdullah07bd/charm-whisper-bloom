@@ -57,14 +57,14 @@ const Index: React.FC = () => {
 
   useEffect(() => {
     const labels: Record<string, { title: string; desc: string; path: string }> = {
-      dashboard:    { title: 'Dashboard | MedHelp — Doctor Console',           desc: 'Daily patient queue, visits and appointment overview for clinicians.', path: '/' },
-      patients:     { title: 'Patients | MedHelp — Doctor Console',            desc: 'Search, review and manage your patient roster.',                       path: '/' },
-      history:      { title: 'Visit History | MedHelp — Doctor Console',       desc: 'Review past visits, diagnoses and prescriptions across patients.',    path: '/' },
-      appointments: { title: 'Appointments | MedHelp — Doctor Console',        desc: 'Manage upcoming and past patient appointments.',                       path: '/' },
-      settings:     { title: 'Settings | MedHelp — Doctor Console',            desc: 'Configure clinic, letterhead and account preferences.',                path: '/' },
+      dashboard:    { title: 'Dashboard | Shifora — Doctor Console',           desc: 'Daily patient queue, visits and appointment overview for clinicians.', path: '/' },
+      patients:     { title: 'Patients | Shifora — Doctor Console',            desc: 'Search, review and manage your patient roster.',                       path: '/' },
+      history:      { title: 'Visit History | Shifora — Doctor Console',       desc: 'Review past visits, diagnoses and prescriptions across patients.',    path: '/' },
+      appointments: { title: 'Appointments | Shifora — Doctor Console',        desc: 'Manage upcoming and past patient appointments.',                       path: '/' },
+      settings:     { title: 'Settings | Shifora — Doctor Console',            desc: 'Configure clinic, letterhead and account preferences.',                path: '/' },
     };
     const meta = selectedPatient
-      ? { title: `${selectedPatient.name} — Patient Record | MedHelp`, desc: `Clinical record, visits and prescriptions for ${selectedPatient.name}.`, path: '/' }
+      ? { title: `${selectedPatient.name} — Patient Record | Shifora`, desc: `Clinical record, visits and prescriptions for ${selectedPatient.name}.`, path: '/' }
       : labels[tab] ?? labels.dashboard;
     setPageMeta({ title: meta.title, description: meta.desc, path: meta.path });
   }, [tab, selectedPatient]);
@@ -188,7 +188,7 @@ const Index: React.FC = () => {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 glass-sidebar border-r border-border/30">
         <div className="p-5 pb-3">
-          <h1 className="text-lg font-medium tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</h1>
+          <h1 className="text-lg font-medium tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>Shifora</h1>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">
             {doctorSettings.name || 'Medical Practice Management'}
           </p>
@@ -264,7 +264,7 @@ const Index: React.FC = () => {
         {/* Mobile Header */}
         <header className="md:hidden sticky top-0 z-30 glass-header border-b border-border/50 px-4 py-3 flex items-center justify-between" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}>
           <div className="min-w-0">
-            <p className="text-base font-semibold truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</p>
+            <p className="text-base font-semibold truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>Shifora</p>
             <p className="text-[11px] text-muted-foreground truncate">
               {doctorSettings.name || 'Medical Practice Management'}
             </p>

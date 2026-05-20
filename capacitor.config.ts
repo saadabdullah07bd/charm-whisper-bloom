@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.medhelp.app',
-  appName: 'MedHelp',
+  appId: 'com.shifora.app',
+  appName: 'Shifora',
   webDir: 'dist',
   android: {
     allowMixedContent: true,
@@ -28,7 +28,7 @@ const config: CapacitorConfig = {
       // webClientId = the "Web application" client ID (used by Supabase too)
       // Android automatically uses the Android OAuth client (SHA-1 matched) — no androidClientId field needed.
       google: {
-        webClientId: '498318841307-hjim9efued265v7r5tqfjvqcdpm6jq8h.apps.googleusercontent.com',
+        webClientId: '268620306815-23kjeqj65anvul6qm0h4dfm180550s7e.apps.googleusercontent.com',
         mode: 'online',
       },
     },

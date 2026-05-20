@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://medhelp.app/sitemap.xml
+Sitemap: https://shifora.app/sitemap.xml

@@ -404,7 +404,7 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
       </div>
 
 
-      <p className="text-center text-[11px] text-muted-foreground pt-3">MedHelp · API v1.0.0</p>
+      <p className="text-center text-[11px] text-muted-foreground pt-3">Shifora · API v1.0.0</p>
     </div>
   );
 };

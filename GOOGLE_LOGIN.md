@@ -1,6 +1,6 @@
 # Google Login — Technical Implementation
 
-This document describes how MedHelp implements native Google Sign-In across web, Android, and iOS.
+This document describes how Shifora implements native Google Sign-In across web, Android, and iOS.
 
 ## Stack at a glance
 

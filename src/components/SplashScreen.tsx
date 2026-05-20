@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import medhelpLogo from "@/assets/medhelp-logo.png";
-import medhelpMark from "@/assets/medhelp-mark.png";
+import shiforaLogo from "@/assets/shifora-logo.png";
+import shiforaMark from "@/assets/shifora-mark.png";
 
 interface Props {
   onDone: () => void;
@@ -8,7 +8,7 @@ interface Props {
   duration?: number;
 }
 
-/** Premium MedHelp launch screen with ECG scan motion and theme-aware surfaces. */
+/** Premium Shifora launch screen with ECG scan motion and theme-aware surfaces. */
 const SplashScreen: React.FC<Props> = ({ onDone, duration = 1400 }) => {
   const [leaving, setLeaving] = useState(false);
 
@@ -51,8 +51,8 @@ const SplashScreen: React.FC<Props> = ({ onDone, duration = 1400 }) => {
 
           <div className="relative flex h-32 w-32 items-center justify-center rounded-[2rem] border border-border bg-card/90 shadow-2xl backdrop-blur-xl splash-logo-card">
             <div className="absolute inset-0 rounded-[2rem] bg-primary/5" />
-            <img src={medhelpLogo} alt="MedHelp" className="relative h-24 w-24 rounded-2xl" />
-            <img src={medhelpMark} alt="" className="absolute -right-3 -top-3 h-9 w-9 rounded-full border border-border bg-background p-1 shadow-lg splash-mark" />
+            <img src={shiforaLogo} alt="Shifora" className="relative h-24 w-24 rounded-2xl" />
+            <img src={shiforaMark} alt="" className="absolute -right-3 -top-3 h-9 w-9 rounded-full border border-border bg-background p-1 shadow-lg splash-mark" />
           </div>
         </div>
 
@@ -61,7 +61,7 @@ const SplashScreen: React.FC<Props> = ({ onDone, duration = 1400 }) => {
             className="text-3xl font-semibold tracking-normal text-foreground"
             style={{ fontFamily: "'Poppins', sans-serif" }}
           >
-            MedHelp
+            Shifora
           </h1>
           <div className="h-1.5 w-44 overflow-hidden rounded-full bg-muted shadow-inner">
             <div className="h-full rounded-full bg-primary splash-progress" />

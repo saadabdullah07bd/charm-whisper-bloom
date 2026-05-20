@@ -10,7 +10,7 @@ const NotFound = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    document.title = "404 — Page Not Found | MedHelp";
+    document.title = "404 — Page Not Found | Shifora";
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
 
     const hash = window.location.hash || '';
@@ -63,7 +63,7 @@ const NotFound = () => {
           </Button>
         </div>
         <p className="mt-10 text-xs text-muted-foreground">
-          © {new Date().getFullYear()} MedHelp · Dr. Mabari
+          © {new Date().getFullYear()} Shifora · Dr. Mabari
         </p>
       </div>
     </div>

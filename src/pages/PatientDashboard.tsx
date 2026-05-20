@@ -327,15 +327,15 @@ const PatientDashboard: React.FC = () => {
   // Per-tab SEO metadata (unique titles + self-canonical for /patient).
   useEffect(() => {
     const labels: Record<string, { title: string; desc: string }> = {
-      profile:       { title: 'Health Snapshot | MedHelp Patient Portal', desc: 'Your vitals, allergies, upcoming visits and recent prescriptions.' },
-      appointments:  { title: 'Appointments | MedHelp Patient Portal',    desc: 'Book, reschedule and join video visits with your doctor.' },
-      visits:        { title: 'Visit History | MedHelp Patient Portal',   desc: 'Past consultations, diagnoses and clinical notes.' },
-      prescriptions: { title: 'Prescriptions | MedHelp Patient Portal',   desc: 'Download and review prescriptions from your doctor.' },
-      files:         { title: 'Reports & Files | MedHelp Patient Portal', desc: 'Upload investigation reports and access your medical files.' },
-      account:       { title: 'Account | MedHelp Patient Portal',         desc: 'Update your personal details, photo and sign-in information.' },
-      settings:      { title: 'Settings | MedHelp Patient Portal',        desc: 'Notification and appearance preferences for this device.' },
-      more:          { title: 'Patient Portal | MedHelp',                 desc: 'Your medical records, visits and prescriptions in one place.' },
-      manual:        { title: 'User Manual | MedHelp Patient Portal',     desc: 'Step-by-step Bangla & English guide to using the patient portal.' },
+      profile:       { title: 'Health Snapshot | Shifora Patient Portal', desc: 'Your vitals, allergies, upcoming visits and recent prescriptions.' },
+      appointments:  { title: 'Appointments | Shifora Patient Portal',    desc: 'Book, reschedule and join video visits with your doctor.' },
+      visits:        { title: 'Visit History | Shifora Patient Portal',   desc: 'Past consultations, diagnoses and clinical notes.' },
+      prescriptions: { title: 'Prescriptions | Shifora Patient Portal',   desc: 'Download and review prescriptions from your doctor.' },
+      files:         { title: 'Reports & Files | Shifora Patient Portal', desc: 'Upload investigation reports and access your medical files.' },
+      account:       { title: 'Account | Shifora Patient Portal',         desc: 'Update your personal details, photo and sign-in information.' },
+      settings:      { title: 'Settings | Shifora Patient Portal',        desc: 'Notification and appearance preferences for this device.' },
+      more:          { title: 'Patient Portal | Shifora',                 desc: 'Your medical records, visits and prescriptions in one place.' },
+      manual:        { title: 'User Manual | Shifora Patient Portal',     desc: 'Step-by-step Bangla & English guide to using the patient portal.' },
     };
     const m = labels[tab] ?? labels.more;
     setPageMeta({ title: m.title, description: m.desc, path: '/patient' });
@@ -584,7 +584,7 @@ const PatientDashboard: React.FC = () => {
     return `
       <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#111827;padding:32px;width:210mm;box-sizing:border-box;background:#fff">
         <div style="border-bottom:2px solid #111827;padding-bottom:12px;margin-bottom:18px">
-          <h1 style="margin:0;font-size:22px">MedHelp — Patient Summary</h1>
+          <h1 style="margin:0;font-size:22px">Shifora — Patient Summary</h1>
           <p style="margin:4px 0 0;font-size:12px;color:#6b7280">Generated ${esc(new Date().toLocaleString())}</p>
         </div>
         <h2 style="font-size:15px;margin:0 0 8px">Patient Information</h2>
@@ -641,7 +641,7 @@ const PatientDashboard: React.FC = () => {
       const file = new File([blob], `${patient.name}_summary.pdf`, { type: 'application/pdf' });
       const navAny = navigator as any;
       if (navAny.canShare && navAny.canShare({ files: [file] })) {
-        await navAny.share({ files: [file], title: 'MedHelp Summary', text: `${patient.name} — Patient Summary` });
+        await navAny.share({ files: [file], title: 'Shifora Summary', text: `${patient.name} — Patient Summary` });
       } else {
         // Fallback: download
         const url = URL.createObjectURL(blob);
@@ -687,7 +687,7 @@ const PatientDashboard: React.FC = () => {
         {/* ── Desktop Sidebar (md+) ── */}
         <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 border-r border-border/30" style={{ background: 'hsl(var(--card)/0.5)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
           <div className="p-5 pb-3">
-            <h1 className="text-lg font-medium tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</h1>
+            <h1 className="text-lg font-medium tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>Shifora</h1>
           </div>
 
           <nav className="flex-1 px-3 py-1 relative">
@@ -738,7 +738,7 @@ const PatientDashboard: React.FC = () => {
       <header className="md:hidden sticky top-0 z-30 border-b border-border/20" style={{ background: 'hsl(var(--background)/0.6)', backdropFilter: 'saturate(180%) blur(20px)', WebkitBackdropFilter: 'saturate(180%) blur(20px)', paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-lg mx-auto px-5 py-2.5 flex items-center min-h-[60px]">
           <div className="min-w-0">
-            <h1 className="text-base font-semibold tracking-tight leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>MedHelp</h1>
+            <h1 className="text-base font-semibold tracking-tight leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>Shifora</h1>
             <p className="text-[11px] text-muted-foreground truncate leading-tight">{patient.name}</p>
           </div>
         </div>
@@ -1759,7 +1759,7 @@ const PatientSettingsTab: React.FC = () => {
   const currentLang = (i18n.language?.startsWith('en') ? 'en' : 'bn') as 'bn' | 'en';
   const setLang = (l: 'bn' | 'en') => {
     i18n.changeLanguage(l);
-    try { localStorage.setItem('medhelp.lang', l); } catch { /* ignore */ }
+    try { localStorage.setItem('shifora.lang', l); } catch { /* ignore */ }
   };
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   return (
@@ -1909,7 +1909,7 @@ const PatientSettingsTab: React.FC = () => {
         )}
       </GlassCard>
 
-      <p className="text-center text-[11px] text-muted-foreground pt-2">MedHelp · v1.0.0</p>
+      <p className="text-center text-[11px] text-muted-foreground pt-2">Shifora · v1.0.0</p>
     </div>
   );
 };

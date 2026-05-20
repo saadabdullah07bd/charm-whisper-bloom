@@ -1,4 +1,4 @@
-# MedHelp — Comprehensive Update Plan
+# Shifora — Comprehensive Update Plan
 
 এই plan-এ আপনার সব request গুলো গুছিয়ে implement করার roadmap দেওয়া হলো। কাজগুলো logical group-এ ভাগ করা হয়েছে যাতে review এবং test করা সহজ হয়।
 
@@ -7,8 +7,8 @@
 ## 1. Branding: New Logo + Favicon Fix
 
 **নতুন logo design (AI-generated, premium quality)**
-- MedHelp-এর জন্য একটা minimal, modern medical logo বানাবো — soft gradient (teal → blue), একটা subtle "heartbeat + plus" mark, rounded square container। App-এর dark/light উভয় theme-এ মানাবে।
-- `src/assets/medhelp-logo.png` এবং `src/assets/medhelp-mark.png` replace করবো।
+- Shifora-এর জন্য একটা minimal, modern medical logo বানাবো — soft gradient (teal → blue), একটা subtle "heartbeat + plus" mark, rounded square container। App-এর dark/light উভয় theme-এ মানাবে।
+- `src/assets/shifora-logo.png` এবং `src/assets/shifora-mark.png` replace করবো।
 
 **Favicon properly setup**
 - Generate করবো: `public/favicon.ico`, `favicon.png`, `favicon-32.png`, `favicon-192.png`, `favicon-512.png`, `apple-touch-icon.png` (180×180) — সব rounded mark থেকে।
@@ -16,8 +16,8 @@
 - `public/manifest.json`-এ icon paths এবং sizes update করবো।
 
 **Top bar থেকে logo সরানো**
-- `src/pages/Index.tsx` (Doctor) এবং `src/pages/PatientDashboard.tsx` — দু'জায়গাতেই top bar/sidebar header থেকে `<img src="/favicon.png" .../>` সরাবো। শুধু "MedHelp" title থাকবে।
-- Patient dashboard-এ "DASHBOARD" uppercase subtitle এবং patient name remove — শুধু "MedHelp" থাকবে।
+- `src/pages/Index.tsx` (Doctor) এবং `src/pages/PatientDashboard.tsx` — দু'জায়গাতেই top bar/sidebar header থেকে `<img src="/favicon.png" .../>` সরাবো। শুধু "Shifora" title থাকবে।
+- Patient dashboard-এ "DASHBOARD" uppercase subtitle এবং patient name remove — শুধু "Shifora" থাকবে।
 
 ---
 
@@ -108,7 +108,7 @@
 
 ## 9. Loading Spinner Redesign
 
-- `BrandedSpinner.tsx` redesign — conic gradient ring + MedHelp mark + soft pulse, app theme-এর সাথে match।
+- `BrandedSpinner.tsx` redesign — conic gradient ring + Shifora mark + soft pulse, app theme-এর সাথে match।
 
 ---
 

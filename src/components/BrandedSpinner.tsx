@@ -1,5 +1,5 @@
 import React from "react";
-import medhelpMark from "@/assets/medhelp-mark.png";
+import shiforaMark from "@/assets/shifora-mark.png";
 
 interface Props {
   size?: number;
@@ -8,7 +8,7 @@ interface Props {
 }
 
 /**
- * Brand-matched loading spinner: pulsing MedHelp mark inside a rotating
+ * Brand-matched loading spinner: pulsing Shifora mark inside a rotating
  * conic-gradient ring. Uses the app's monochrome theme tokens.
  */
 const BrandedSpinner: React.FC<Props> = ({ size = 72, label, fullscreen = false }) => {
@@ -32,7 +32,7 @@ const BrandedSpinner: React.FC<Props> = ({ size = 72, label, fullscreen = false 
       />
       <div className="absolute inset-[18%] rounded-full bg-card shadow-lg" />
       <img
-        src={medhelpMark}
+        src={shiforaMark}
         alt=""
         className="relative rounded-full animate-pulse"
         style={{

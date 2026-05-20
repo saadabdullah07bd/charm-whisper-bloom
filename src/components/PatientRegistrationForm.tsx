@@ -286,7 +286,7 @@ const PatientRegistrationForm: React.FC<Props> = ({ onComplete }) => {
       {/* Logo */}
       <div className="text-center pt-4 pb-1">
         <h1 className="text-3xl font-bold tracking-wide" style={{ fontFamily: "'Poppins', sans-serif" }}>
-          <span className="bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">MedHelp</span>
+          <span className="bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">Shifora</span>
         </h1>
       </div>
       <p className="text-center text-sm text-muted-foreground mb-3" style={{ fontFamily: "'Poppins', sans-serif" }}>{t('subtitle')}</p>

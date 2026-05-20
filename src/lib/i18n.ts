@@ -57,7 +57,7 @@ const en = {
   },
   notFound: {
     title: 'Page not found',
-    desc: "The page you're looking for doesn't exist or has been moved. Let's get you back to MedHelp.",
+    desc: "The page you're looking for doesn't exist or has been moved. Let's get you back to Shifora.",
   },
   video: {
     starting: 'Starting video call…', couldNotStart: 'Could not start the video call.',
@@ -221,7 +221,7 @@ const bn = {
   },
   notFound: {
     title: 'পেজ খুঁজে পাওয়া যায়নি',
-    desc: 'আপনি যে পেজটি খুঁজছেন সেটি নেই বা সরানো হয়েছে। চলুন MedHelp-এ ফিরে যাই।',
+    desc: 'আপনি যে পেজটি খুঁজছেন সেটি নেই বা সরানো হয়েছে। চলুন Shifora-এ ফিরে যাই।',
   },
   video: {
     starting: 'ভিডিও কল চালু হচ্ছে…', couldNotStart: 'ভিডিও কল চালু করা গেল না।',

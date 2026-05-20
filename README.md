@@ -1,6 +1,6 @@
-# MedHelp
+# Shifora
 
-MedHelp is a secure portal for managing patient records, appointments,
+Shifora is a secure portal for managing patient records, appointments,
 prescriptions and online consultations.
 
 ## Stack

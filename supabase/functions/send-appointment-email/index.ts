@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
-// MedHelp brand palette — matches the uploaded email template design.
+// Shifora brand palette — matches the uploaded email template design.
 const BRAND = {
   primary: "#4a4a43",        // warm charcoal, used for accent + buttons
   primaryFg: "#ffffff",
@@ -71,7 +71,7 @@ function emailLayout(opts: LayoutOpts): string {
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 <!-- Brand wordmark -->
 <tr><td align="center" style="padding:24px 0;">
-<span style="font-family:${FONT};font-weight:500;font-size:28px;color:${BRAND.text};letter-spacing:0.5px;">MedHelp</span>
+<span style="font-family:${FONT};font-weight:500;font-size:28px;color:${BRAND.text};letter-spacing:0.5px;">Shifora</span>
 </td></tr>
 <!-- Card -->
 <tr><td>
@@ -104,7 +104,7 @@ ${footnote ? `<div style="height:1px;background:${BRAND.divider};margin:24px 0;"
 <!-- Footer -->
 <tr><td align="center" style="padding:28px 20px;">
 <p style="font-family:${FONT};font-weight:400;font-size:12px;color:${BRAND.subtle};line-height:1.6;margin:0;">${footerText || "If you didn't expect this email, you can safely ignore it."}</p>
-<p style="font-family:${FONT};font-weight:400;font-size:11px;color:#bbbbbb;margin:16px 0 0;">© ${new Date().getFullYear()} MedHelp. All rights reserved.</p>
+<p style="font-family:${FONT};font-weight:400;font-size:11px;color:#bbbbbb;margin:16px 0 0;">© ${new Date().getFullYear()} Shifora. All rights reserved.</p>
 </td></tr>
 </table>
 </td></tr>
@@ -220,7 +220,7 @@ async function buildEmail(payload: EmailPayload): Promise<{ subject: string; htm
   switch (type) {
     case "booking_received":
       return {
-        subject: "Appointment Request Received – MedHelp",
+        subject: "Appointment Request Received – Shifora",
         html: emailLayout({
           title: "Booking Received",
           icon: defaultIcons.calendarClock,
@@ -236,7 +236,7 @@ async function buildEmail(payload: EmailPayload): Promise<{ subject: string; htm
       const calLink = buildCalendarLink(date, time, payload.patientName, meetLink);
       const meetRow = meetLink ? `<tr><td style="padding:10px 14px;color:${BRAND.muted};font-size:12px;font-family:${FONT};width:110px;">Video Call</td><td style="padding:10px 14px;font-size:13px;font-family:${FONT};"><a href="${meetLink}" style="color:${BRAND.info};text-decoration:underline;word-break:break-all;">${meetLink}</a></td></tr>` : "";
       return {
-        subject: "Appointment Confirmed – MedHelp",
+        subject: "Appointment Confirmed – Shifora",
         html: emailLayout({
           title: "Appointment Confirmed",
           icon: defaultIcons.calendarCheck,
@@ -258,7 +258,7 @@ async function buildEmail(payload: EmailPayload): Promise<{ subject: string; htm
       const calLink = buildCalendarLink(date, time, payload.patientName, meetLink);
       const meetRow = meetLink ? `<tr><td style="padding:10px 14px;color:${BRAND.muted};font-size:12px;font-family:${FONT};width:110px;">Video Call</td><td style="padding:10px 14px;font-size:13px;font-family:${FONT};"><a href="${meetLink}" style="color:${BRAND.info};text-decoration:underline;word-break:break-all;">${meetLink}</a></td></tr>` : "";
       return {
-        subject: "Your Appointment Starts Soon – MedHelp",
+        subject: "Your Appointment Starts Soon – Shifora",
         html: emailLayout({
           title: "Meeting Reminder",
           icon: defaultIcons.bellRing,
@@ -276,7 +276,7 @@ async function buildEmail(payload: EmailPayload): Promise<{ subject: string; htm
 
     case "appointment_cancelled_by_doctor":
       return {
-        subject: "Appointment Cancelled – MedHelp",
+        subject: "Appointment Cancelled – Shifora",
         html: emailLayout({
           title: "Appointment Cancelled",
           icon: defaultIcons.calendarX,
@@ -308,7 +308,7 @@ async function buildEmail(payload: EmailPayload): Promise<{ subject: string; htm
 
     case "reschedule_approved":
       return {
-        subject: "Reschedule Approved – MedHelp",
+        subject: "Reschedule Approved – Shifora",
         html: emailLayout({
           title: "Reschedule Approved",
           icon: defaultIcons.calendarCheck,
@@ -323,7 +323,7 @@ async function buildEmail(payload: EmailPayload): Promise<{ subject: string; htm
 
     case "appointment_cancelled_by_patient":
       return {
-        subject: "Appointment Cancelled – MedHelp",
+        subject: "Appointment Cancelled – Shifora",
         html: emailLayout({
           title: "Appointment Cancelled",
           icon: defaultIcons.calendarX,
@@ -352,7 +352,7 @@ async function buildEmail(payload: EmailPayload): Promise<{ subject: string; htm
 
     case "reschedule_rejected":
       return {
-        subject: "Reschedule Request Not Approved – MedHelp",
+        subject: "Reschedule Request Not Approved – Shifora",
         html: emailLayout({
           title: "Reschedule Declined",
           icon: defaultIcons.calendarClock,
@@ -397,7 +397,7 @@ ${reportName ? `<tr><td style="padding:10px 14px;color:${BRAND.muted};font-size:
 
     case "reschedule_holding":
       return {
-        subject: "Reschedule Request Submitted – MedHelp",
+        subject: "Reschedule Request Submitted – Shifora",
         html: emailLayout({
           title: "Reschedule Pending",
           icon: defaultIcons.calendarClock,
@@ -413,7 +413,7 @@ ${reportName ? `<tr><td style="padding:10px 14px;color:${BRAND.muted};font-size:
 
     case "prescription_ready":
       return {
-        subject: "Your Prescription – MedHelp",
+        subject: "Your Prescription – Shifora",
         html: emailLayout({
           title: "Prescription Ready",
           icon: defaultIcons.pill,
