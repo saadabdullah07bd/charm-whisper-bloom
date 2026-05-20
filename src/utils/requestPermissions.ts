@@ -101,6 +101,12 @@ export const requestCameraAndMicForVideoCall = async (): Promise<MediaPermission
     return { ok: true, cameraGranted: true, micGranted: true, permanentlyDenied: false };
   }
 
+  // The native bridge below is Android-only. On iOS, let Daily/WebRTC surface
+  // the system camera + microphone prompts during the user-initiated join.
+  if (Capacitor.getPlatform() !== 'android') {
+    return { ok: true, cameraGranted: true, micGranted: true, permanentlyDenied: false };
+  }
+
   try {
     let status = await NativeMediaPermissions.check();
     if (!isGranted(status.camera) || !isGranted(status.microphone)) {
