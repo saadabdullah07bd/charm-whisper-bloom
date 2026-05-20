@@ -56,24 +56,43 @@ export async function signInWithGoogleNative() {
   // requires modifying MainActivity for extra scopes and will throw
   // "You cannot use scopes without modifying the main activity".
   // The default Google sign-in already returns email + profile + idToken.
+  // Prefer Credential Manager bottom-sheet that surfaces previously-used
+  // Google accounts (One-Tap style). If no saved/authorized account exists,
+  // fall back to the full chooser, then finally to the classic dialog.
   let res: any;
   try {
     res = await SocialLogin.login({
       provider: 'google',
       options: {
         style: 'bottom',
-        filterByAuthorizedAccounts: false,
-        autoSelectEnabled: false,
+        filterByAuthorizedAccounts: true,
+        autoSelectEnabled: true,
       },
     });
-  } catch (error) {
-    if (!isGoogleCancelError(error)) throw error;
-    res = await SocialLogin.login({
-      provider: 'google',
-      options: {
-        style: 'standard',
-      },
-    });
+  } catch (firstErr) {
+    if (!isGoogleCancelError(firstErr)) {
+      try {
+        res = await SocialLogin.login({
+          provider: 'google',
+          options: {
+            style: 'bottom',
+            filterByAuthorizedAccounts: false,
+            autoSelectEnabled: false,
+          },
+        });
+      } catch (secondErr) {
+        if (!isGoogleCancelError(secondErr)) throw secondErr;
+        res = await SocialLogin.login({
+          provider: 'google',
+          options: { style: 'standard' },
+        });
+      }
+    } else {
+      res = await SocialLogin.login({
+        provider: 'google',
+        options: { style: 'standard' },
+      });
+    }
   }
 
   // @capgo/capacitor-social-login returns { result: { idToken, accessToken, ... } }

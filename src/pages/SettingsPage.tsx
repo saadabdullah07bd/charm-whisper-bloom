@@ -424,69 +424,6 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
         {saved ? t('settings.settingsSaved') : t('settings.saveSettings')}
       </button>
 
-      {/* FCM service-account JSON — doctor-only admin UI */}
-      {role === 'doctor' && (
-        <div className="glass-card p-5 space-y-3 mt-2">
-          <h2 className="text-sm font-semibold flex items-center gap-1.5">
-            <KeyRound size={14} /> Firebase service-account (FCM)
-          </h2>
-          <p className="text-xs text-muted-foreground -mt-1">
-            Paste the JSON from Firebase Console → ⚙️ Project Settings → <b>Service accounts</b> → <b>Generate new private key</b>.
-            Push notifications use this credential. The private key is stored in your database (RLS: doctor-only) and never shown back.
-          </p>
-          <div className="text-xs text-muted-foreground">
-            Current: <span className="font-mono">{fcmProjectId ?? '— not set —'}</span>
-            {fcmSavedAt && <span className="ml-2">· updated {new Date(fcmSavedAt).toLocaleString()}</span>}
-          </div>
-          <textarea
-            value={fcmJsonText}
-            onChange={(e) => setFcmJsonText(e.target.value)}
-            placeholder='{"type":"service_account","project_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...","client_email":"...","..."}'
-            spellCheck={false}
-            rows={8}
-            className="medical-input w-full font-mono text-[11px] leading-snug"
-          />
-          <button
-            onClick={handleSaveFcmJson}
-            disabled={fcmSaving || !fcmJsonText.trim()}
-            className="w-full rounded-xl py-3 font-medium text-sm bg-primary text-primary-foreground hover:opacity-90 btn-press disabled:opacity-50"
-          >
-            {fcmSaving ? 'Saving…' : 'Save service-account JSON'}
-          </button>
-        </div>
-      )}
-
-      {/* Notification diagnostic — runs FCM + Resend test and shows raw result */}
-      <div className="glass-card p-5 space-y-3 mt-2">
-        <h2 className="text-sm font-semibold">🔔 Notification diagnostic</h2>
-        <p className="text-xs text-muted-foreground -mt-1">
-          Sends a real push to this device's registered token and a test email to your account email. Use this if pushes or emails are not arriving.
-        </p>
-        <button
-          onClick={async () => {
-            toast({ title: 'Running diagnostic...' });
-            const { data, error } = await supabase.functions.invoke('diag-notifications', { body: { email: true } });
-            if (error) {
-              toast({ title: 'Diagnostic failed', description: String(error.message ?? error), variant: 'destructive' });
-              return;
-            }
-            console.log('[diag-notifications]', data);
-            const r = data as any;
-            const summary = [
-              `FCM secret: ${r?.fcm?.secret_present ? '✅' : '❌'}`,
-              `FCM project: ${r?.fcm?.project_id ?? '—'}`,
-              `OAuth token: ${r?.fcm?.access_token_ok ? '✅' : '❌'}`,
-              `Tokens in DB: ${r?.fcm?.tokens_in_db ?? 0}`,
-              `Sent OK: ${(r?.tokens ?? []).filter((t: any) => t.ok).length}/${(r?.tokens ?? []).length}`,
-              `Resend: ${r?.email_test?.ok ? '✅ sent' : (r?.email_test?.error ?? r?.email_test?.response?.message ?? '—')}`,
-            ].join('\n');
-            alert(summary + '\n\nFull report in console.');
-          }}
-          className="w-full rounded-xl py-3 font-medium text-sm bg-primary text-primary-foreground hover:opacity-90 btn-press"
-        >
-          Run notification test
-        </button>
-      </div>
 
       {/* Account section — Sign out at the very bottom */}
       <div className="glass-card p-5 space-y-3 mt-2">
