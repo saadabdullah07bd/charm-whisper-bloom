@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/
 import { toast } from "sonner";
 import { Loader2, Sun, Moon, Monitor } from "lucide-react";
 import { setPageMeta } from "@/lib/pageMeta";
-import medhelpLogo from "@/assets/medhelp-logo.png";
+import shiforaLogo from "@/assets/shifora-logo.png";
 import { signInWithGoogleNative } from "@/lib/nativeAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { LANG_STORAGE_KEY } from "@/lib/i18n";
@@ -18,8 +18,8 @@ const PatientAuthPage: React.FC<{ onSwitchToDoctor?: () => void }> = () => {
 
   useEffect(() => {
     setPageMeta({
-      title: "Sign In | MedHelp Patient Portal",
-      description: "Sign in with Google to access your MedHelp patient portal — appointments, prescriptions and reports.",
+      title: "Sign In | Shifora Patient Portal",
+      description: "Sign in with Google to access your Shifora patient portal — appointments, prescriptions and reports.",
       path: "/patient",
     });
   }, []);
@@ -65,7 +65,7 @@ const PatientAuthPage: React.FC<{ onSwitchToDoctor?: () => void }> = () => {
       <div className="w-full max-w-md" style={{ animation: 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
         <Card className="overflow-hidden">
           <CardHeader className="text-center items-center">
-            <img src={medhelpLogo} alt="MedHelp" className="w-16 h-16 rounded-2xl mb-2 shadow-lg" />
+            <img src={shiforaLogo} alt="Shifora" className="w-16 h-16 rounded-2xl mb-2 shadow-lg" />
             <h1 className="text-2xl font-medium" style={{ fontFamily: "'Poppins', sans-serif" }}>{t('auth.portalTitle')}</h1>
             <CardDescription>{t('auth.portalDesc')}</CardDescription>
           </CardHeader>

@@ -4,8 +4,8 @@ import { setPageMeta } from "@/lib/pageMeta";
 const TermsOfService: React.FC = () => {
   useEffect(() => {
     setPageMeta({
-      title: "Terms of Service | MedHelp",
-      description: "The terms that govern your use of MedHelp's secure portal for appointments, prescriptions, and patient records.",
+      title: "Terms of Service | Shifora",
+      description: "The terms that govern your use of Shifora's secure portal for appointments, prescriptions, and patient records.",
       path: "/terms-of-service",
     });
   }, []);
@@ -25,7 +25,7 @@ const TermsOfService: React.FC = () => {
 
         <section className="space-y-6 leading-relaxed">
           <p>
-            By accessing <strong>dashboard.drmabari.com</strong> ("MedHelp", "the Service")
+            By accessing <strong>dashboard.drmabari.com</strong> ("Shifora", "the Service")
             you agree to these Terms of Service. If you do not agree, do not use the Service.
           </p>
 
@@ -34,7 +34,7 @@ const TermsOfService: React.FC = () => {
 
           <h2 className="text-xl font-semibold mt-8" style={{ fontFamily: "'Poppins', sans-serif" }}>2. Medical disclaimer</h2>
           <p>
-            MedHelp is a digital tool for managing appointments and records. It is not a
+            Shifora is a digital tool for managing appointments and records. It is not a
             substitute for emergency care or in-person medical examination. In case of emergency,
             call your local emergency services immediately.
           </p>
@@ -63,7 +63,7 @@ const TermsOfService: React.FC = () => {
           <h2 className="text-xl font-semibold mt-8" style={{ fontFamily: "'Poppins', sans-serif" }}>6. Limitation of liability</h2>
           <p>
             The Service is provided "as is" without warranties of any kind. To the maximum extent
-            permitted by law, MedHelp is not liable for any indirect, incidental or consequential
+            permitted by law, Shifora is not liable for any indirect, incidental or consequential
             damages arising from your use of the Service.
           </p>
 

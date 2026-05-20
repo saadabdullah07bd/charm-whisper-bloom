@@ -49,7 +49,7 @@ export default function VideoCallPage() {
   }, []);
 
   useEffect(() => {
-    document.title = `${t('video.title')} — MedHelp`;
+    document.title = `${t('video.title')} — Shifora`;
   }, [t]);
 
   // ── Doctor post-call actions ──

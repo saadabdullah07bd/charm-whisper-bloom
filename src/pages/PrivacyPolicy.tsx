@@ -4,8 +4,8 @@ import { setPageMeta } from "@/lib/pageMeta";
 const PrivacyPolicy: React.FC = () => {
   useEffect(() => {
     setPageMeta({
-      title: "Privacy Policy | MedHelp",
-      description: "How MedHelp collects, uses, and safeguards patient and doctor information across appointments, prescriptions, and records.",
+      title: "Privacy Policy | Shifora",
+      description: "How Shifora collects, uses, and safeguards patient and doctor information across appointments, prescriptions, and records.",
       path: "/privacy-policy",
     });
   }, []);
@@ -25,7 +25,7 @@ const PrivacyPolicy: React.FC = () => {
 
         <section className="space-y-6 leading-relaxed">
           <p>
-            MedHelp ("we", "our", or "us") operates the dashboard at
+            Shifora ("we", "our", or "us") operates the dashboard at
             <strong> dashboard.drmabari.com</strong> (the "Service"). This Privacy Policy
             explains how we collect, use and safeguard information when you use the
             Service.
@@ -50,7 +50,7 @@ const PrivacyPolicy: React.FC = () => {
 
           <h2 className="text-xl font-semibold mt-8" style={{ fontFamily: "'Poppins', sans-serif" }}>3. Google API Services User Data</h2>
           <p>
-            MedHelp's use and transfer of information received from Google APIs adheres to the
+            Shifora's use and transfer of information received from Google APIs adheres to the
             <a className="text-primary underline mx-1" href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noreferrer">
               Google API Services User Data Policy
             </a>
