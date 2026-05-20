@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { Camera } from '@capacitor/camera';
+import { registerPlugin } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Preferences } from '@capacitor/preferences';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,14 +71,29 @@ export interface MediaPermissionResult {
   permanentlyDenied: boolean;
 }
 
+type NativePermissionState = 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale' | string;
+
+interface NativeMediaPermissionStatus {
+  camera: NativePermissionState;
+  microphone: NativePermissionState;
+}
+
+const NativeMediaPermissions = registerPlugin<{
+  check(): Promise<NativeMediaPermissionStatus>;
+  request(): Promise<NativeMediaPermissionStatus>;
+}>('ShiforaMediaPermissions');
+
+const isGranted = (state?: NativePermissionState) => state === 'granted';
+
 /**
  * Camera + Microphone — requested ONLY immediately before joining a video
  * call. Returns a structured result; the caller is responsible for any UI.
  *
- * - Camera: requested via `@capacitor/camera` (triggers Android runtime perm).
- * - Microphone: requested via `getUserMedia({ audio: true })` which triggers
- *   MainActivity's WebChromeClient → ActivityCompat.requestPermissions and
- *   surfaces the native RECORD_AUDIO dialog the first time.
+ * Android: requested through a tiny native Capacitor bridge. We intentionally
+ * do NOT probe the microphone with getUserMedia() here because Android WebView
+ * and older devices can falsely reject that probe even after the OS permission
+ * is granted. Daily will request WebRTC resources after the native permission
+ * is available, and MainActivity grants those WebView resources.
  */
 export const requestCameraAndMicForVideoCall = async (): Promise<MediaPermissionResult> => {
   // On the web we let the browser prompt at getUserMedia time inside Daily.
@@ -86,35 +101,30 @@ export const requestCameraAndMicForVideoCall = async (): Promise<MediaPermission
     return { ok: true, cameraGranted: true, micGranted: true, permanentlyDenied: false };
   }
 
-  let cameraGranted = false;
-  let micGranted = false;
-  let permanentlyDenied = false;
-
-  // ── Camera ───────────────────────────────────────────────────────────
   try {
-    let camStatus = await Camera.checkPermissions();
-    if (camStatus.camera !== 'granted') {
-      camStatus = await Camera.requestPermissions({ permissions: ['camera'] });
+    let status = await NativeMediaPermissions.check();
+    if (!isGranted(status.camera) || !isGranted(status.microphone)) {
+      status = await NativeMediaPermissions.request();
     }
-    cameraGranted = camStatus.camera === 'granted';
-    if (camStatus.camera === 'denied') permanentlyDenied = true;
+
+    const cameraGranted = isGranted(status.camera);
+    const micGranted = isGranted(status.microphone);
+    return {
+      ok: cameraGranted && micGranted,
+      cameraGranted,
+      micGranted,
+      permanentlyDenied: false,
+    };
   } catch (e) {
-    console.error('[perms] camera request failed', e);
-  }
+    console.error('[perms] native camera/microphone request failed', e);
 
-  // ── Microphone (probe via getUserMedia, surfaces native dialog) ──────
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach((t) => t.stop());
-    micGranted = true;
-  } catch (e: any) {
-    console.error('[perms] microphone request failed', e);
-    // NotAllowedError = user denied; SecurityError can mean "don't ask again".
-    if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') {
-      permanentlyDenied = true;
+    // If the installed native shell has not been synced with the new bridge yet,
+    // do not falsely block the call. Daily + MainActivity's WebChromeClient will
+    // still get a chance to request/grant WebRTC permissions during join.
+    if (Capacitor.getPlatform() === 'android') {
+      return { ok: true, cameraGranted: true, micGranted: true, permanentlyDenied: false };
     }
-    micGranted = false;
-  }
 
-  return { ok: cameraGranted && micGranted, cameraGranted, micGranted, permanentlyDenied };
+    return { ok: false, cameraGranted: false, micGranted: false, permanentlyDenied: false };
+  }
 };
