@@ -6,7 +6,7 @@ import { useThemeFull, type ThemeMode, type ThemeAccent, type ThemeGradient, typ
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { LANG_STORAGE_KEY } from '@/lib/i18n';
-import { useUserRole } from '@/hooks/useUserRole';
+
 
 interface Props {
   settings: DoctorSettings;
@@ -63,13 +63,8 @@ const SettingsPage: React.FC<Props> = ({ settings, onSave }) => {
   const [uploadingLetterhead, setUploadingLetterhead] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const letterheadInputRef = useRef<HTMLInputElement>(null);
-  const { role } = useUserRole();
 
-  // FCM service-account JSON admin
-  const [fcmJsonText, setFcmJsonText] = useState('');
-  const [fcmSavedAt, setFcmSavedAt] = useState<string | null>(null);
-  const [fcmProjectId, setFcmProjectId] = useState<string | null>(null);
-  const [fcmSaving, setFcmSaving] = useState(false);
+
 
   const { mode, setMode, accent, setAccent, gradient, setGradient, fontScale, setFontScale } = useThemeFull();
 
