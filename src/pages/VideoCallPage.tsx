@@ -119,9 +119,17 @@ export default function VideoCallPage() {
 
         // Ask for camera + microphone right before joining (native only).
         // On web, Daily handles the browser prompt itself.
-        const permsOk = await requestCameraAndMicForVideoCall();
-        if (!permsOk) {
-          setError(t('video.couldNotStart') + ' (camera/microphone permission denied)');
+        const perms = await requestCameraAndMicForVideoCall();
+        if (!perms.ok) {
+          const missing = [
+            !perms.cameraGranted && 'Camera',
+            !perms.micGranted && 'Microphone',
+          ].filter(Boolean).join(' and ');
+          setError(
+            perms.permanentlyDenied
+              ? `${missing} access is blocked. Open Settings → Apps → Shifora → Permissions and allow ${missing}.`
+              : `${missing} permission is needed to start the video call. Please tap Allow when prompted.`,
+          );
           setLoading(false);
           return;
         }

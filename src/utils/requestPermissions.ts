@@ -8,9 +8,6 @@ const PERMISSIONS_REQUESTED_KEY = 'app_permissions_requested_v1';
 
 /**
  * Notification permission — requested ONCE on first app launch.
- * Persists a flag in Capacitor Preferences so subsequent launches don't re-prompt.
- * On grant, registers the device for FCM and upserts the token into
- * `device_push_tokens` (same logic as the previous initPushNotifications).
  */
 let pushListenersBound = false;
 function bindPushListenersOnce() {
@@ -45,8 +42,6 @@ export const requestNotificationPermissionOnStart = async () => {
   if (!Capacitor.isNativePlatform()) return;
 
   const { value } = await Preferences.get({ key: PERMISSIONS_REQUESTED_KEY });
-  // Even if we've prompted before, we still want to (re)register so the
-  // token listener fires and the row gets refreshed. Just don't re-prompt.
   try {
     bindPushListenersOnce();
 
@@ -68,50 +63,58 @@ export const requestNotificationPermissionOnStart = async () => {
   }
 };
 
+export interface MediaPermissionResult {
+  ok: boolean;
+  cameraGranted: boolean;
+  micGranted: boolean;
+  /** True if at least one permission was permanently denied (user must open settings). */
+  permanentlyDenied: boolean;
+}
+
 /**
  * Camera + Microphone — requested ONLY immediately before joining a video
- * call. Returns true if both are granted.
+ * call. Returns a structured result; the caller is responsible for any UI.
  *
  * - Camera: requested via `@capacitor/camera` (triggers Android runtime perm).
- * - Microphone: requested via `getUserMedia({ audio: true })` which surfaces
- *   the native Android mic dialog because MainActivity is patched to grant
- *   WebView mic requests. The probe stream is stopped immediately.
+ * - Microphone: requested via `getUserMedia({ audio: true })` which triggers
+ *   MainActivity's WebChromeClient → ActivityCompat.requestPermissions and
+ *   surfaces the native RECORD_AUDIO dialog the first time.
  */
-export const requestCameraAndMicForVideoCall = async (): Promise<boolean> => {
+export const requestCameraAndMicForVideoCall = async (): Promise<MediaPermissionResult> => {
   // On the web we let the browser prompt at getUserMedia time inside Daily.
-  if (!Capacitor.isNativePlatform()) return true;
+  if (!Capacitor.isNativePlatform()) {
+    return { ok: true, cameraGranted: true, micGranted: true, permanentlyDenied: false };
+  }
 
   let cameraGranted = false;
   let micGranted = false;
+  let permanentlyDenied = false;
 
-  // Camera
+  // ── Camera ───────────────────────────────────────────────────────────
   try {
     let camStatus = await Camera.checkPermissions();
     if (camStatus.camera !== 'granted') {
       camStatus = await Camera.requestPermissions({ permissions: ['camera'] });
     }
     cameraGranted = camStatus.camera === 'granted';
+    if (camStatus.camera === 'denied') permanentlyDenied = true;
   } catch (e) {
     console.error('[perms] camera request failed', e);
   }
 
-  // Microphone (no official Capacitor plugin — probe via getUserMedia).
+  // ── Microphone (probe via getUserMedia, surfaces native dialog) ──────
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     stream.getTracks().forEach((t) => t.stop());
     micGranted = true;
-  } catch (e) {
+  } catch (e: any) {
     console.error('[perms] microphone request failed', e);
+    // NotAllowedError = user denied; SecurityError can mean "don't ask again".
+    if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') {
+      permanentlyDenied = true;
+    }
     micGranted = false;
   }
 
-  const success = cameraGranted && micGranted;
-  if (!success) {
-    const missing = [
-      !cameraGranted && 'Camera',
-      !micGranted && 'Microphone',
-    ].filter(Boolean).join(' and ');
-    alert(`${missing} permission is required to join the video call. Please enable it in Settings.`);
-  }
-  return success;
+  return { ok: cameraGranted && micGranted, cameraGranted, micGranted, permanentlyDenied };
 };
