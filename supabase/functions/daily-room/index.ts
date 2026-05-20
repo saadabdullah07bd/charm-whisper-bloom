@@ -43,14 +43,18 @@ Deno.serve(async (req) => {
     }
 
     const { appointmentId, displayName } = await req.json();
+    console.log("[daily-room] request", { appointmentId, userId });
     if (!appointmentId) return json({ error: "appointmentId required" }, 400);
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { data: apt, error: aptErr } = await supabase
       .from("appointments")
       .select("id, patient_id, appointment_date, time_slot, status, google_meet_link")
-      .eq("id", appointmentId).single();
-    if (aptErr || !apt) return json({ error: "Appointment not found" }, 404);
+      .eq("id", appointmentId).maybeSingle();
+    if (aptErr || !apt) {
+      console.error("[daily-room] appointment lookup failed", { appointmentId, error: aptErr?.message });
+      return json({ error: "Appointment not found", appointmentId }, 404);
+    }
 
     // Authorization: only the booked patient or a doctor may join.
     let isDoctor = false;
