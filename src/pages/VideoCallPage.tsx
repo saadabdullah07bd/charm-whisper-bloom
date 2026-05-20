@@ -7,6 +7,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { getDailyJoin } from '@/lib/dailyRoom';
 import { toast } from 'sonner';
+import { requestCameraAndMicForVideoCall } from '@/utils/requestPermissions';
 
 function getFallbackPath(role: 'doctor' | 'patient' | null) {
   return role === 'patient' ? '/patient/appointments' : '/dashboard/appointments';
