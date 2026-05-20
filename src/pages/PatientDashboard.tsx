@@ -48,6 +48,7 @@ interface AppointmentRecord {
   chief_complaint: string | null; created_at: string;
   cancel_reason: string | null; reschedule_date: string | null; reschedule_time_slot: string | null;
   google_meet_link?: string | null;
+  patient_id?: string | null;
 }
 
 interface VisitRecord {
