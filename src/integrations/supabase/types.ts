@@ -41,13 +41,22 @@ export type Database = {
           cancel_reason: string | null
           chief_complaint: string | null
           created_at: string
+          doctor_joined_at: string | null
+          doctor_left_at: string | null
+          google_event_id: string | null
+          google_meet_link: string | null
           id: string
+          meeting_quality: string | null
           patient_email: string | null
           patient_id: string | null
+          patient_joined_at: string | null
+          patient_left_at: string | null
           patient_name: string
           patient_phone: string | null
           reschedule_date: string | null
           reschedule_time_slot: string | null
+          session_ended_at: string | null
+          session_ended_by: string | null
           status: string
           time_slot: string
           updated_at: string
@@ -57,13 +66,22 @@ export type Database = {
           cancel_reason?: string | null
           chief_complaint?: string | null
           created_at?: string
+          doctor_joined_at?: string | null
+          doctor_left_at?: string | null
+          google_event_id?: string | null
+          google_meet_link?: string | null
           id?: string
+          meeting_quality?: string | null
           patient_email?: string | null
           patient_id?: string | null
+          patient_joined_at?: string | null
+          patient_left_at?: string | null
           patient_name: string
           patient_phone?: string | null
           reschedule_date?: string | null
           reschedule_time_slot?: string | null
+          session_ended_at?: string | null
+          session_ended_by?: string | null
           status?: string
           time_slot: string
           updated_at?: string
@@ -73,13 +91,22 @@ export type Database = {
           cancel_reason?: string | null
           chief_complaint?: string | null
           created_at?: string
+          doctor_joined_at?: string | null
+          doctor_left_at?: string | null
+          google_event_id?: string | null
+          google_meet_link?: string | null
           id?: string
+          meeting_quality?: string | null
           patient_email?: string | null
           patient_id?: string | null
+          patient_joined_at?: string | null
+          patient_left_at?: string | null
           patient_name?: string
           patient_phone?: string | null
           reschedule_date?: string | null
           reschedule_time_slot?: string | null
+          session_ended_at?: string | null
+          session_ended_by?: string | null
           status?: string
           time_slot?: string
           updated_at?: string
