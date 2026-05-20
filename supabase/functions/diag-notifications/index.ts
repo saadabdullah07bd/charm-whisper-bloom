@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
             method: 'POST',
             headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              from: 'MedHelp Diag <onboarding@resend.dev>',
+              from: Deno.env.get('APPOINTMENT_FROM_EMAIL') || 'Dr. M Abdul Bari <noreply@drmabari.com>',
               to: [callerEmail],
               subject: 'MedHelp notification diagnostic',
               html: '<p>If you received this, Resend works. Check sender domain in send-appointment-email.</p>',

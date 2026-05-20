@@ -20,24 +20,13 @@ export type Database = {
           cancel_reason: string | null
           chief_complaint: string | null
           created_at: string
-          doctor_joined_at: string | null
-          doctor_left_at: string | null
-          google_event_id: string | null
-          google_meet_link: string | null
           id: string
-          meet_reminder_sent_at: string | null
-          meeting_quality: string | null
           patient_email: string | null
           patient_id: string | null
-          patient_joined_at: string | null
-          patient_left_at: string | null
           patient_name: string
           patient_phone: string | null
-          patient_telegram_id: string | null
           reschedule_date: string | null
           reschedule_time_slot: string | null
-          session_ended_at: string | null
-          session_ended_by: string | null
           status: string
           time_slot: string
           updated_at: string
@@ -47,24 +36,13 @@ export type Database = {
           cancel_reason?: string | null
           chief_complaint?: string | null
           created_at?: string
-          doctor_joined_at?: string | null
-          doctor_left_at?: string | null
-          google_event_id?: string | null
-          google_meet_link?: string | null
           id?: string
-          meet_reminder_sent_at?: string | null
-          meeting_quality?: string | null
           patient_email?: string | null
           patient_id?: string | null
-          patient_joined_at?: string | null
-          patient_left_at?: string | null
           patient_name: string
           patient_phone?: string | null
-          patient_telegram_id?: string | null
           reschedule_date?: string | null
           reschedule_time_slot?: string | null
-          session_ended_at?: string | null
-          session_ended_by?: string | null
           status?: string
           time_slot: string
           updated_at?: string
@@ -74,24 +52,13 @@ export type Database = {
           cancel_reason?: string | null
           chief_complaint?: string | null
           created_at?: string
-          doctor_joined_at?: string | null
-          doctor_left_at?: string | null
-          google_event_id?: string | null
-          google_meet_link?: string | null
           id?: string
-          meet_reminder_sent_at?: string | null
-          meeting_quality?: string | null
           patient_email?: string | null
           patient_id?: string | null
-          patient_joined_at?: string | null
-          patient_left_at?: string | null
           patient_name?: string
           patient_phone?: string | null
-          patient_telegram_id?: string | null
           reschedule_date?: string | null
           reschedule_time_slot?: string | null
-          session_ended_at?: string | null
-          session_ended_by?: string | null
           status?: string
           time_slot?: string
           updated_at?: string
@@ -106,36 +73,8 @@ export type Database = {
           },
         ]
       }
-      device_push_tokens: {
-        Row: {
-          created_at: string
-          id: string
-          platform: string
-          token: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          platform: string
-          token: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          platform?: string
-          token?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       doctor_settings: {
         Row: {
-          chambers: Json | null
           created_at: string
           degrees: string
           degrees_bn: string | null
@@ -147,20 +86,16 @@ export type Database = {
           mobile: string
           name: string
           name_bn: string | null
-          online_consultation: Json | null
           signature_data_url: string | null
           specialization: string | null
           specialization_bn: string | null
-          telegram_chat_id: string | null
           title: string | null
           title_bn: string | null
-          twilio_phone: string | null
           updated_at: string
           user_id: string
           website: string | null
         }
         Insert: {
-          chambers?: Json | null
           created_at?: string
           degrees?: string
           degrees_bn?: string | null
@@ -172,20 +107,16 @@ export type Database = {
           mobile?: string
           name?: string
           name_bn?: string | null
-          online_consultation?: Json | null
           signature_data_url?: string | null
           specialization?: string | null
           specialization_bn?: string | null
-          telegram_chat_id?: string | null
           title?: string | null
           title_bn?: string | null
-          twilio_phone?: string | null
           updated_at?: string
           user_id: string
           website?: string | null
         }
         Update: {
-          chambers?: Json | null
           created_at?: string
           degrees?: string
           degrees_bn?: string | null
@@ -197,83 +128,14 @@ export type Database = {
           mobile?: string
           name?: string
           name_bn?: string | null
-          online_consultation?: Json | null
           signature_data_url?: string | null
           specialization?: string | null
           specialization_bn?: string | null
-          telegram_chat_id?: string | null
           title?: string | null
           title_bn?: string | null
-          twilio_phone?: string | null
           updated_at?: string
           user_id?: string
           website?: string | null
-        }
-        Relationships: []
-      }
-      notification_logs: {
-        Row: {
-          channel: string
-          created_at: string
-          id: string
-          message: string | null
-          metadata: Json | null
-          recipient: string
-          status: string
-          type: string
-        }
-        Insert: {
-          channel?: string
-          created_at?: string
-          id?: string
-          message?: string | null
-          metadata?: Json | null
-          recipient: string
-          status?: string
-          type: string
-        }
-        Update: {
-          channel?: string
-          created_at?: string
-          id?: string
-          message?: string | null
-          metadata?: Json | null
-          recipient?: string
-          status?: string
-          type?: string
-        }
-        Relationships: []
-      }
-      patient_google_tokens: {
-        Row: {
-          access_token: string | null
-          created_at: string
-          email: string | null
-          expires_at: string | null
-          refresh_token: string
-          scope: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          access_token?: string | null
-          created_at?: string
-          email?: string | null
-          expires_at?: string | null
-          refresh_token: string
-          scope?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          access_token?: string | null
-          created_at?: string
-          email?: string | null
-          expires_at?: string | null
-          refresh_token?: string
-          scope?: string | null
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -348,7 +210,6 @@ export type Database = {
           previous_childbirths: number | null
           profile_locked: boolean | null
           socio_economic_status: string | null
-          telegram_id: string | null
           treatment_history: string | null
           updated_at: string
           user_id: string | null
@@ -383,7 +244,6 @@ export type Database = {
           previous_childbirths?: number | null
           profile_locked?: boolean | null
           socio_economic_status?: string | null
-          telegram_id?: string | null
           treatment_history?: string | null
           updated_at?: string
           user_id?: string | null
@@ -418,7 +278,6 @@ export type Database = {
           previous_childbirths?: number | null
           profile_locked?: boolean | null
           socio_economic_status?: string | null
-          telegram_id?: string | null
           treatment_history?: string | null
           updated_at?: string
           user_id?: string | null
