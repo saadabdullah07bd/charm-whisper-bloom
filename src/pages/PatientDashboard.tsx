@@ -10,6 +10,7 @@ import { Camera } from 'lucide-react';
 import PatientRegistrationForm from '@/components/PatientRegistrationForm';
 import BrandedSpinner from '@/components/BrandedSpinner';
 import InAppPdfViewer from '@/components/InAppPdfViewer';
+import ZoomableImage from '@/components/ZoomableImage';
 // PrescriptionPreview removed — replaced by uploaded-PDF list.
 import { useTheme } from '@/hooks/useTheme';
 import { toast } from 'sonner';
@@ -851,8 +852,8 @@ const PatientDashboard: React.FC = () => {
             </div>
             <div className="flex-1 min-h-0 overflow-auto bg-muted/20">
               {viewingReport.type.startsWith('image/') ? (
-                <div className="w-full h-full flex items-center justify-center p-4">
-                  <img src={viewingReport.url} alt={viewingReport.name} className="max-w-full max-h-full object-contain rounded-2xl" />
+                <div className="w-full h-full p-2 sm:p-4">
+                  <ZoomableImage src={viewingReport.url} alt={viewingReport.name} />
                 </div>
               ) : (
                 <InAppPdfViewer url={viewingReport.url} fileName={viewingReport.name} />
