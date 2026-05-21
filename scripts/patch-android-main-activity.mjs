@@ -9,8 +9,9 @@ const mainActivityPath = join(javaDir, 'MainActivity.java');
 const manifestPath = join('android', 'app', 'src', 'main', 'AndroidManifest.xml');
 const appGradlePath = join('android', 'app', 'build.gradle');
 
-if (!existsSync(mainActivityPath)) {
-  console.log(`[cap:patch-main] Android platform not found yet (${mainActivityPath}). Skipping.`);
+const hasAndroidPlatform = existsSync(manifestPath) || existsSync(mainActivityPath) || existsSync(appGradlePath);
+if (!hasAndroidPlatform) {
+  console.log('[cap:patch-main] Android platform not found yet. Skipping.');
   process.exit(0);
 }
 
@@ -24,7 +25,7 @@ const writeIfChanged = (p, content) => {
 };
 
 // ──────────────────────────────────────────────────────────────────────
-// MainActivity.java — Google Sign-In bridge (Daily video call removed)
+// MainActivity.java — Google Sign-In bridge
 // ──────────────────────────────────────────────────────────────────────
 const packageLine = `package ${appId};`;
 
@@ -67,7 +68,11 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
 }
 `;
 
-writeIfChanged(mainActivityPath, desiredMainActivity);
+if (existsSync(mainActivityPath)) {
+  writeIfChanged(mainActivityPath, desiredMainActivity);
+} else {
+  console.log(`[cap:patch-main] MainActivity not found (${mainActivityPath}). Skipping MainActivity patch.`);
+}
 
 // ──────────────────────────────────────────────────────────────────────
 // App-level build.gradle — release signing only (Daily SDK removed)
@@ -121,7 +126,7 @@ android {`,
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// AndroidManifest.xml — camera + microphone permissions for video calls
+// AndroidManifest.xml — camera + microphone permissions for WebView video calls
 // ──────────────────────────────────────────────────────────────────────
 if (existsSync(manifestPath)) {
   let m = readFileSync(manifestPath, 'utf8');
@@ -130,6 +135,9 @@ if (existsSync(manifestPath)) {
     'android.permission.CAMERA',
     'android.permission.RECORD_AUDIO',
     'android.permission.MODIFY_AUDIO_SETTINGS',
+    'android.permission.FOREGROUND_SERVICE',
+    'android.permission.FOREGROUND_SERVICE_CAMERA',
+    'android.permission.FOREGROUND_SERVICE_MICROPHONE',
   ];
   for (const perm of requiredPerms) {
     if (!m.includes(`android:name="${perm}"`)) {
