@@ -2,6 +2,7 @@ import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { type PatientReport } from '@/types/medical';
 import ModalShell from '@/components/ModalShell';
+import InAppPdfViewer from '@/components/InAppPdfViewer';
 
 interface Props {
   report: PatientReport | null;
@@ -20,23 +21,19 @@ const ReportPreviewModal: React.FC<Props> = ({ report, onClose }) => {
           <p className="text-xs text-muted-foreground">
             Uploaded on {new Date(report.date).toLocaleString()}
           </p>
-          <button
-            type="button"
-            onClick={async () => {
-              window.open(report.dataUrl, '_blank', 'noopener,noreferrer');
-            }}
+          <a
+            href={report.dataUrl}
+            download={report.name}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground btn-press"
           >
-            <ExternalLink size={14} /> Open
-          </button>
+            <ExternalLink size={14} /> Download
+          </a>
         </div>
 
         {isPdf ? (
-          <iframe
-            src={report.dataUrl}
-            title={report.name}
-            className="h-[72vh] w-full rounded-xl border border-border bg-background"
-          />
+          <div className="h-[72vh] w-full rounded-xl border border-border bg-background overflow-hidden">
+            <InAppPdfViewer url={report.dataUrl} fileName={report.name} />
+          </div>
         ) : (
           <div className="rounded-xl border border-border bg-background p-3">
             <img
