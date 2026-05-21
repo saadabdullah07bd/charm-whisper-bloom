@@ -7,6 +7,14 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { requestCameraMicPermissions } from '@/utils/requestPermissions';
 
+const withTimeout = <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]);
+
 /**
  * In-app Daily.co video call screen.
  *
@@ -41,9 +49,16 @@ const VideoCallPage: React.FC = () => {
 
     setStatus('connecting');
     try {
-      const { data, error } = await supabase.functions.invoke('daily-room', {
-        body: { appointmentId },
-      });
+      if (callRef.current) {
+        await callRef.current.destroy().catch(() => {});
+        callRef.current = null;
+      }
+
+      const { data, error } = await withTimeout(
+        supabase.functions.invoke('daily-room', { body: { appointmentId } }),
+        20000,
+        'The call server took too long to respond. Please check your connection and try again.',
+      );
       if (error) throw error;
       if (!data?.url || !data?.token) throw new Error('Invalid room response');
 
@@ -67,12 +82,34 @@ const VideoCallPage: React.FC = () => {
       frame.on('error', (e: any) => {
         console.error('[daily] error', e);
         toast.error(e?.errorMsg ?? 'Call error');
+        setStatus('error');
+        setErrorMsg(e?.errorMsg ?? 'Daily could not connect to the call.');
+      });
+      frame.on('network-connection', (e: any) => {
+        if (e.event === 'interrupted') {
+          toast.error('Network connection interrupted. Trying to reconnect...', { duration: 5000 });
+        } else if (e.event === 'connected') {
+          toast.success('Network connection restored');
+        }
+      });
+      frame.on('network-quality-change', (e: any) => {
+        if (e.threshold === 'low' || e.threshold === 'very-low') {
+          toast.warning('Poor network quality detected. Video might freeze.');
+        }
       });
 
-      await frame.join({ url: data.url, token: data.token });
+      await withTimeout(
+        frame.join({ url: data.url, token: data.token }),
+        45000,
+        'Daily is still loading after 45 seconds. Please try again, or rebuild the Android app after syncing the latest native permission patch.',
+      );
       setStatus('in-call');
     } catch (err: any) {
       console.error('[VideoCallPage] start failed', err);
+      if (callRef.current) {
+        await callRef.current.destroy().catch(() => {});
+        callRef.current = null;
+      }
       setStatus('error');
       setErrorMsg(err?.message ?? 'Could not start the call.');
     }
