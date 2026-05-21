@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound.tsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import VideoCallPage from "./pages/VideoCallPage";
 import NativeStatusBarSync from "./components/NativeStatusBarSync";
 // Permission bootstrap moved to main.tsx (`requestNotificationPermissionOnStart`).
 
