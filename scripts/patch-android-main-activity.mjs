@@ -120,4 +120,37 @@ android {`,
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────
+// AndroidManifest.xml — camera + microphone permissions for video calls
+// ──────────────────────────────────────────────────────────────────────
+if (existsSync(manifestPath)) {
+  let m = readFileSync(manifestPath, 'utf8');
+  const before = m;
+  const requiredPerms = [
+    'android.permission.CAMERA',
+    'android.permission.RECORD_AUDIO',
+    'android.permission.MODIFY_AUDIO_SETTINGS',
+  ];
+  for (const perm of requiredPerms) {
+    if (!m.includes(`android:name="${perm}"`)) {
+      m = m.replace(
+        /<manifest([^>]*)>/,
+        `<manifest$1>\n    <uses-permission android:name="${perm}" />`,
+      );
+    }
+  }
+  // Camera feature (not required so app still installs on devices without camera)
+  if (!m.includes('android.hardware.camera')) {
+    m = m.replace(
+      /<manifest([^>]*)>/,
+      `<manifest$1>\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-feature android:name="android.hardware.microphone" android:required="false" />`,
+    );
+  }
+  if (m !== before) {
+    writeFileSync(manifestPath, m);
+    console.log('[cap:patch-main] Patched AndroidManifest.xml (camera/mic permissions).');
+  }
+}
+
 console.log('[cap:patch-main] Done.');
+

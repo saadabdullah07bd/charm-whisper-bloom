@@ -86,8 +86,8 @@ const AppointmentsTab: React.FC = () => {
     return () => clearInterval(id);
   }, []);
 
-  const handleJoinCall = (_apt: Appointment) => {
-    toast.info('Video call feature has been removed.');
+  const handleJoinCall = (apt: Appointment) => {
+    navigate(`/call/${apt.id}`);
   };
 
   // Doctor manually ends a session early — closes the re-join window so the

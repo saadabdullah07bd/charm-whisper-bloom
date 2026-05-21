@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -18,6 +19,9 @@ const ProtectedRoute: React.FC<Props> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [welcomeDone, setWelcomeDoneState] = useState<boolean>(() => isWelcomeDone());
   const { role, loading: roleLoading } = useUserRole();
+  const location = useLocation();
+  const isCallRoute = location.pathname.startsWith('/call/');
+  
   
 
   useEffect(() => {
@@ -48,7 +52,9 @@ const ProtectedRoute: React.FC<Props> = ({ children }) => {
     return <WelcomeOnboarding onDone={() => setWelcomeDoneState(true)} />;
   }
 
-  if (role === 'patient') {
+  // The /call route is shared by patients & doctors — don't redirect patients
+  // to their dashboard when navigating there.
+  if (role === 'patient' && !isCallRoute) {
     return <PatientDashboard />;
   }
 

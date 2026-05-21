@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound.tsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import VideoCallPage from "./pages/VideoCallPage";
 import NativeStatusBarSync from "./components/NativeStatusBarSync";
 // Permission bootstrap moved to main.tsx (`requestNotificationPermissionOnStart`).
 
@@ -35,6 +36,8 @@ const App = () => {
           {/* Patient portal — tab in URL: /patient, /patient/profile, etc. */}
           <Route path="/patient" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/patient/:tab" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          {/* Video call — accessible to both patient and doctor */}
+          <Route path="/call/:appointmentId" element={<ProtectedRoute><VideoCallPage /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
