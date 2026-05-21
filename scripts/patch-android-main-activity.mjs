@@ -24,7 +24,7 @@ const writeIfChanged = (p, content) => {
 };
 
 // ──────────────────────────────────────────────────────────────────────
-// MainActivity.java — Google Sign-In bridge (Daily video call removed)
+// MainActivity.java — Google Sign-In bridge
 // ──────────────────────────────────────────────────────────────────────
 const packageLine = `package ${appId};`;
 
@@ -121,7 +121,7 @@ android {`,
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// AndroidManifest.xml — camera + microphone permissions for video calls
+// AndroidManifest.xml — camera + microphone permissions for WebView video calls
 // ──────────────────────────────────────────────────────────────────────
 if (existsSync(manifestPath)) {
   let m = readFileSync(manifestPath, 'utf8');
@@ -130,6 +130,9 @@ if (existsSync(manifestPath)) {
     'android.permission.CAMERA',
     'android.permission.RECORD_AUDIO',
     'android.permission.MODIFY_AUDIO_SETTINGS',
+    'android.permission.FOREGROUND_SERVICE',
+    'android.permission.FOREGROUND_SERVICE_CAMERA',
+    'android.permission.FOREGROUND_SERVICE_MICROPHONE',
   ];
   for (const perm of requiredPerms) {
     if (!m.includes(`android:name="${perm}"`)) {
