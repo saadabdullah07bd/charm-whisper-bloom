@@ -10,6 +10,7 @@ const mediaPermissionsPluginPath = join(javaDir, 'ShiforaMediaPermissionsPlugin.
 const dailyPluginPath = join(javaDir, 'daily', 'DailyCallPlugin.kt');
 const dailyActivityPath = join(javaDir, 'daily', 'DailyCallActivity.kt');
 const dailyServicePath = join(javaDir, 'daily', 'DailyCallService.kt');
+const dailyScreenShareServicePath = join(javaDir, 'daily', 'DailyScreenShareService.kt');
 const manifestPath = join('android', 'app', 'src', 'main', 'AndroidManifest.xml');
 const appGradlePath = join('android', 'app', 'build.gradle');
 const projectGradlePath = join('android', 'build.gradle');
@@ -228,9 +229,12 @@ writeIfChanged(dailyServicePath, dailyServiceKt);
 const dailyActivityKt = `package ${appId}.daily
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -241,28 +245,29 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import co.daily.CallClient
 import co.daily.CallClientListener
 import co.daily.model.AvailableDevices
 import co.daily.model.CallState
+import co.daily.model.MediaDeviceInfo
 import co.daily.model.MeetingToken
 import co.daily.model.Participant
 import co.daily.model.ParticipantId
 import co.daily.model.ParticipantLeftReason
 import co.daily.settings.CameraInputSettingsUpdate
-import co.daily.settings.Disable
-import co.daily.settings.Enable
 import co.daily.settings.FacingModeUpdate
 import co.daily.settings.InputSettingsUpdate
 import co.daily.settings.VideoMediaTrackSettingsUpdate
-import co.daily.settings.subscription.SubscriptionProfile
-import co.daily.view.VideoView
+import co.daily.settings.VideoProcessor
 import com.getcapacitor.JSObject
+import co.daily.view.VideoView
 
 private const val TAG = "DailyCallActivity"
 
@@ -282,6 +287,10 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
     private var micEnabled = true
     private var camEnabled = true
     private var facing = FacingModeUpdate.user
+    private var blurLevel = 0  // 0=off, 1=low, 2=high
+    private var audioDevices: List<MediaDeviceInfo> = emptyList()
+    private var activeAudioDeviceId: String? = null
+    private var isScreenSharing = false
 
     private lateinit var root: FrameLayout
     private lateinit var remoteContainer: FrameLayout
@@ -293,15 +302,37 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
     private lateinit var micButton: Button
     private lateinit var camButton: Button
     private lateinit var flipButton: Button
+    private lateinit var blurButton: Button
+    private lateinit var speakerButton: Button
+    private lateinit var shareButton: Button
     private lateinit var leaveButton: Button
     private var localVideoView: VideoView? = null
     private var remoteVideoView: VideoView? = null
+
+    private lateinit var mediaProjectionManager: MediaProjectionManager
 
     private val permissionLauncher = registerForActivityResult(RequestMultiplePermissions()) { result ->
         if (result.values.any { !it }) {
             statusText.text = "Camera and microphone permission required"
         } else {
             initClient()
+        }
+    }
+
+    private val screenShareLauncher = registerForActivityResult(StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val data = result.data!!
+            DailyScreenShareService.pendingStarter = Runnable {
+                try {
+                    callClient?.startScreenShare(data)
+                    isScreenSharing = true
+                    runOnUiThread { shareButton.text = "Stop share" }
+                } catch (t: Throwable) {
+                    Log.e(TAG, "startScreenShare failed", t)
+                }
+            }
+            val svc = Intent(this, DailyScreenShareService::class.java)
+            ContextCompat.startForegroundService(this, svc)
         }
     }
 
@@ -313,6 +344,8 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
         token = intent.getStringExtra("token")
         userName = intent.getStringExtra("userName") ?: "Guest"
         isDoctor = intent.getBooleanExtra("isDoctor", false)
+
+        mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
         buildUi()
 
@@ -350,8 +383,7 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
         root.addView(localContainer)
 
         statusText = TextView(this).apply {
-            setTextColor(Color.WHITE)
-            textSize = 16f
+            setTextColor(Color.WHITE); textSize = 16f
             text = "Preparing call…"
             gravity = Gravity.CENTER
             layoutParams = FrameLayout.LayoutParams(MATCH, WRAP, Gravity.CENTER)
@@ -367,24 +399,24 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
             layoutParams = FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM)
         }
         val preTitle = TextView(this).apply {
-            text = "Ready to join?"
-            setTextColor(Color.WHITE); textSize = 18f
-            gravity = Gravity.CENTER
+            text = "Ready to join?"; setTextColor(Color.WHITE); textSize = 18f; gravity = Gravity.CENTER
         }
         val preHint = TextView(this).apply {
-            text = "Check your camera and mic, then tap Join."
+            text = "Check your camera, mic and effects, then tap Join."
             setTextColor(Color.parseColor("#cccccc")); textSize = 13f
-            gravity = Gravity.CENTER
-            setPadding(0, dp(4), 0, dp(12))
+            gravity = Gravity.CENTER; setPadding(0, dp(4), 0, dp(12))
         }
         val preRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
         }
         val pMic = makeBtn("Mic on") { toggleMic(); (it as Button).text = if (micEnabled) "Mic on" else "Mic off" }
         val pCam = makeBtn("Cam on") { toggleCam(); (it as Button).text = if (camEnabled) "Cam on" else "Cam off" }
         val pFlip = makeBtn("Flip") { flipCamera() }
-        preRow.addView(pMic); preRow.addView(spacer()); preRow.addView(pCam); preRow.addView(spacer()); preRow.addView(pFlip)
+        val pBlur = makeBtn("Blur: off") { cycleBlur(); (it as Button).text = blurLabel() }
+        preRow.addView(pMic); preRow.addView(spacer())
+        preRow.addView(pCam); preRow.addView(spacer())
+        preRow.addView(pFlip); preRow.addView(spacer())
+        preRow.addView(pBlur)
         joinButton = Button(this).apply {
             text = "Join meeting"
             setBackgroundColor(Color.parseColor("#16a34a"))
@@ -400,26 +432,31 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
         }
         prejoinPanel.addView(preTitle); prejoinPanel.addView(preHint); prejoinPanel.addView(preRow)
         val joinRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER
             setPadding(0, dp(16), 0, 0)
         }
         joinRow.addView(cancelBtn); joinRow.addView(spacer()); joinRow.addView(joinButton)
         prejoinPanel.addView(joinRow)
         root.addView(prejoinPanel)
 
-        // In-call controls (hidden until joined)
-        controlsPanel = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
+        // In-call controls (hidden until joined) — scrollable to fit extra buttons
+        val controlsScroll = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
             setBackgroundColor(Color.parseColor("#aa000000"))
-            setPadding(dp(12), dp(12), dp(12), dp(20))
             visibility = View.GONE
             layoutParams = FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM)
+        }
+        controlsPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(12), dp(12), dp(12), dp(20))
         }
         micButton = makeBtn("Mic on") { toggleMic(); micButton.text = if (micEnabled) "Mic on" else "Mic off" }
         camButton = makeBtn("Cam on") { toggleCam(); camButton.text = if (camEnabled) "Cam on" else "Cam off" }
         flipButton = makeBtn("Flip") { flipCamera() }
+        blurButton = makeBtn("Blur: off") { cycleBlur(); blurButton.text = blurLabel() }
+        speakerButton = makeBtn("Speaker") { cycleSpeaker() }
+        shareButton = makeBtn("Share") { toggleScreenShare() }
         leaveButton = Button(this).apply {
             text = "Leave"
             setBackgroundColor(Color.parseColor("#dc2626"))
@@ -429,8 +466,14 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
         controlsPanel.addView(micButton); controlsPanel.addView(spacer())
         controlsPanel.addView(camButton); controlsPanel.addView(spacer())
         controlsPanel.addView(flipButton); controlsPanel.addView(spacer())
+        controlsPanel.addView(blurButton); controlsPanel.addView(spacer())
+        controlsPanel.addView(speakerButton); controlsPanel.addView(spacer())
+        controlsPanel.addView(shareButton); controlsPanel.addView(spacer())
         controlsPanel.addView(leaveButton)
-        root.addView(controlsPanel)
+        controlsScroll.addView(controlsPanel)
+        root.addView(controlsScroll)
+        // Keep a reference so we can toggle visibility from onCallStateUpdated
+        controlsPanel.tag = controlsScroll
 
         setContentView(root)
     }
@@ -446,12 +489,17 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
         layoutParams = LinearLayout.LayoutParams(dp(8), 1)
     }
 
+    private fun blurLabel(): String = when (blurLevel) {
+        1 -> "Blur: low"
+        2 -> "Blur: high"
+        else -> "Blur: off"
+    }
+
     private fun initClient() {
         try {
             callClient = CallClient(applicationContext, lifecycle)
             callClient?.addListener(this)
             callClient?.setUserName(userName) {}
-            // Enable inputs for prejoin preview
             callClient?.setInputsEnabled(camera = true, microphone = true) {}
             statusText.text = "Tap Join to start"
         } catch (t: Throwable) {
@@ -474,7 +522,6 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
                 }
             }
         }
-        // Start foreground service so call survives backgrounding
         try {
             val svc = Intent(this, DailyCallService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(svc) else startService(svc)
@@ -482,11 +529,14 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
     }
 
     private fun doLeave() {
+        if (isScreenSharing) {
+            try { callClient?.stopScreenShare() } catch (_: Throwable) {}
+            try { stopService(Intent(this, DailyScreenShareService::class.java)) } catch (_: Throwable) {}
+            isScreenSharing = false
+        }
         val client = callClient
         if (client == null) { finishWithResult(joined = hasJoined, errorMessage = null); return }
         client.leave {}
-        // listener will fire onCallStateUpdated -> left
-        // safety: finish after short delay if no callback
         root.postDelayed({ if (!hasFinished) finishWithResult(joined = hasJoined, errorMessage = null) }, 1500)
     }
 
@@ -510,6 +560,52 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
                 )
             )
         ) {}
+    }
+
+    private fun cycleBlur() {
+        blurLevel = (blurLevel + 1) % 3
+        val processor: VideoProcessor = when (blurLevel) {
+            1 -> VideoProcessor.BackgroundBlur(0.6)
+            2 -> VideoProcessor.BackgroundBlur(1.0)
+            else -> VideoProcessor.None
+        }
+        try {
+            callClient?.updateInputs(
+                InputSettingsUpdate(
+                    camera = VideoMediaTrackSettingsUpdate(
+                        settings = CameraInputSettingsUpdate(processor = processor)
+                    )
+                )
+            ) {}
+        } catch (t: Throwable) {
+            Log.w(TAG, "Set blur failed: " + t.message)
+        }
+    }
+
+    private fun cycleSpeaker() {
+        if (audioDevices.isEmpty()) return
+        val idx = audioDevices.indexOfFirst { it.deviceId == activeAudioDeviceId }
+        val next = audioDevices[(idx + 1).coerceAtLeast(0) % audioDevices.size]
+        try {
+            callClient?.setAudioDevice(next.deviceId)
+            activeAudioDeviceId = next.deviceId
+            speakerButton.text = "Audio: " + (next.label.take(10))
+        } catch (t: Throwable) {
+            Log.w(TAG, "setAudioDevice failed: " + t.message)
+        }
+    }
+
+    private fun toggleScreenShare() {
+        if (!hasJoined) return
+        if (isScreenSharing) {
+            try { callClient?.stopScreenShare() } catch (_: Throwable) {}
+            try { stopService(Intent(this, DailyScreenShareService::class.java)) } catch (_: Throwable) {}
+            isScreenSharing = false
+            shareButton.text = "Share"
+        } else {
+            val captureIntent = mediaProjectionManager.createScreenCaptureIntent()
+            screenShareLauncher.launch(captureIntent)
+        }
     }
 
     private fun updateLocalView() {
@@ -557,7 +653,7 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
                     hasJoined = true
                     joinedAt = System.currentTimeMillis()
                     prejoinPanel.visibility = View.GONE
-                    controlsPanel.visibility = View.VISIBLE
+                    (controlsPanel.tag as? View)?.visibility = View.VISIBLE
                     statusText.text = "Waiting for the other person to join…"
                     updateLocalView()
                     updateRemoteView()
@@ -583,7 +679,18 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
         runOnUiThread { updateRemoteView() }
     }
 
-    override fun onAvailableDevicesUpdated(availableDevices: AvailableDevices) {}
+    override fun onAvailableDevicesUpdated(availableDevices: AvailableDevices) {
+        audioDevices = availableDevices.audio
+        if (activeAudioDeviceId == null) {
+            activeAudioDeviceId = audioDevices.firstOrNull()?.deviceId
+        }
+        runOnUiThread {
+            val label = audioDevices.firstOrNull { it.deviceId == activeAudioDeviceId }?.label
+            if (::speakerButton.isInitialized && label != null) {
+                speakerButton.text = "Audio: " + label.take(10)
+            }
+        }
+    }
 
     override fun onError(message: String) {
         Log.e(TAG, "Daily error: " + message)
@@ -594,6 +701,7 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
         if (hasFinished) return
         hasFinished = true
         try { stopService(Intent(this, DailyCallService::class.java)) } catch (_: Throwable) {}
+        try { stopService(Intent(this, DailyScreenShareService::class.java)) } catch (_: Throwable) {}
         try { callClient?.release() } catch (_: Throwable) {}
         callClient = null
 
@@ -621,6 +729,62 @@ class DailyCallActivity : AppCompatActivity(), CallClientListener {
 `;
 writeIfChanged(dailyActivityPath, dailyActivityKt);
 
+// Screen-share foreground service (mediaProjection type)
+const dailyScreenShareServiceKt = `package ${appId}.daily
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.Intent
+import android.os.Build
+import android.os.IBinder
+import androidx.core.app.NotificationCompat
+
+class DailyScreenShareService : Service() {
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    companion object {
+        @Volatile var pendingStarter: Runnable? = null
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "shifora_screen_share",
+                "Screen sharing",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val tapIntent = packageManager.getLaunchIntentForPackage(packageName)
+        val pi = PendingIntent.getActivity(
+            this, 0,
+            tapIntent ?: Intent(),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val n: Notification = NotificationCompat.Builder(this, "shifora_screen_share")
+            .setSmallIcon(android.R.drawable.ic_menu_share)
+            .setContentTitle("Shifora screen share")
+            .setContentText("Sharing screen")
+            .setOngoing(true)
+            .setContentIntent(pi)
+            .build()
+        startForeground(1002, n)
+        pendingStarter?.run()
+        pendingStarter = null
+        return START_STICKY
+    }
+}
+`;
+writeIfChanged(dailyScreenShareServicePath, dailyScreenShareServiceKt);
+
 // ──────────────────────────────────────────────────────────────────────
 // 5) AndroidManifest.xml — perms, foreground services
 // ──────────────────────────────────────────────────────────────────────
@@ -638,6 +802,7 @@ if (existsSync(manifestPath)) {
     'android.permission.FOREGROUND_SERVICE',
     'android.permission.FOREGROUND_SERVICE_CAMERA',
     'android.permission.FOREGROUND_SERVICE_MICROPHONE',
+    'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
   ];
   for (const name of neededPerms) {
     const re = new RegExp(`android:name="${name.replace(/\./g, '\\.')}"`);
@@ -664,6 +829,10 @@ if (existsSync(manifestPath)) {
   }
   if (!/DailyCallService/.test(manifest)) {
     const svcTag = `        <service android:name="${appId}.daily.DailyCallService" android:exported="false" android:foregroundServiceType="camera|microphone" />\n`;
+    manifest = manifest.replace(/<\/application>/, `${svcTag}    </application>`);
+  }
+  if (!/DailyScreenShareService/.test(manifest)) {
+    const svcTag = `        <service android:name="${appId}.daily.DailyScreenShareService" android:exported="false" android:foregroundServiceType="mediaProjection" />\n`;
     manifest = manifest.replace(/<\/application>/, `${svcTag}    </application>`);
   }
 
