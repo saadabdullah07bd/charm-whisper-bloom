@@ -15,6 +15,12 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number, message: string): Prom
     }),
   ]);
 
+const readString = (value: unknown, key: string): string | undefined => {
+  if (!value || typeof value !== 'object') return undefined;
+  const field = (value as Record<string, unknown>)[key];
+  return typeof field === 'string' ? field : undefined;
+};
+
 /**
  * In-app Daily.co video call screen.
  *
@@ -79,21 +85,24 @@ const VideoCallPage: React.FC = () => {
       frame.on('left-meeting', () => {
         navigate(-1);
       });
-      frame.on('error', (e: any) => {
+      frame.on('error', (e: unknown) => {
         console.error('[daily] error', e);
-        toast.error(e?.errorMsg ?? 'Call error');
+        const message = readString(e, 'errorMsg') ?? 'Daily could not connect to the call.';
+        toast.error(message);
         setStatus('error');
-        setErrorMsg(e?.errorMsg ?? 'Daily could not connect to the call.');
+        setErrorMsg(message);
       });
-      frame.on('network-connection', (e: any) => {
-        if (e.event === 'interrupted') {
+      frame.on('network-connection', (e: unknown) => {
+        const event = readString(e, 'event');
+        if (event === 'interrupted') {
           toast.error('Network connection interrupted. Trying to reconnect...', { duration: 5000 });
-        } else if (e.event === 'connected') {
+        } else if (event === 'connected') {
           toast.success('Network connection restored');
         }
       });
-      frame.on('network-quality-change', (e: any) => {
-        if (e.threshold === 'low' || e.threshold === 'very-low') {
+      frame.on('network-quality-change', (e: unknown) => {
+        const threshold = readString(e, 'threshold');
+        if (threshold === 'low' || threshold === 'very-low') {
           toast.warning('Poor network quality detected. Video might freeze.');
         }
       });
@@ -104,14 +113,14 @@ const VideoCallPage: React.FC = () => {
         'Daily is still loading after 45 seconds. Please try again, or rebuild the Android app after syncing the latest native permission patch.',
       );
       setStatus('in-call');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[VideoCallPage] start failed', err);
       if (callRef.current) {
         await callRef.current.destroy().catch(() => {});
         callRef.current = null;
       }
       setStatus('error');
-      setErrorMsg(err?.message ?? 'Could not start the call.');
+      setErrorMsg(err instanceof Error ? err.message : 'Could not start the call.');
     }
   };
 
