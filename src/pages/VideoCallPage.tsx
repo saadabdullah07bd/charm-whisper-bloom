@@ -53,6 +53,7 @@ const VideoCallPage: React.FC = () => {
       return;
     }
     previewStreamRef.current = permission.stream;
+    const mediaStream = permission.stream;
 
     setStatus('loading-room');
     try {
@@ -70,10 +71,10 @@ const VideoCallPage: React.FC = () => {
       if (!data?.url || !data?.token) throw new Error('Invalid room response');
 
       if (!containerRef.current) throw new Error('Container not ready');
-      const audioTrack = previewStreamRef.current.getAudioTracks()[0];
-      const videoTrack = previewStreamRef.current.getVideoTracks()[0];
+      const audioTrack = mediaStream.getAudioTracks()[0];
+      const videoTrack = mediaStream.getVideoTracks()[0];
       if (!audioTrack || !videoTrack) {
-        stopMediaStream(previewStreamRef.current);
+        stopMediaStream(mediaStream);
         previewStreamRef.current = null;
         throw new Error('Camera and microphone did not open correctly. Please try again.');
       }
