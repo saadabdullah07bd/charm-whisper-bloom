@@ -34,8 +34,11 @@ const desiredMainActivity = `${packageLine}
 import android.os.Bundle;
 import android.content.Intent;
 import android.util.Log;
+import android.webkit.PermissionRequest;
+import android.webkit.WebView;
 
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebChromeClient;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginHandle;
 
@@ -51,6 +54,22 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        WebView webView = getBridge().getWebView();
+        webView.setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
+            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                if (request.getOrigin().toString().contains("daily.co")) {
+                    request.grant(request.getResources());
+                } else {
+                    super.onPermissionRequest(request);
+                }
+            }
+        });
     }
 
     @Override
