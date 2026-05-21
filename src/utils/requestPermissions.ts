@@ -1,5 +1,4 @@
 import { Capacitor } from '@capacitor/core';
-import { Camera } from '@capacitor/camera';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Preferences } from '@capacitor/preferences';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,30 +62,60 @@ export const requestNotificationPermissionOnStart = async () => {
   }
 };
 
+export type CameraMicPermissionResult =
+  | { granted: true; stream: MediaStream }
+  | { granted: false; message: string; errorName?: string };
+
+const describeMediaError = (err: unknown): { message: string; errorName?: string } => {
+  const name = err instanceof Error ? err.name : 'UnknownError';
+  if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+    return {
+      errorName: name,
+      message: 'Camera or microphone permission was blocked. Please allow both permissions for Shifora in Android app settings, then try again.',
+    };
+  }
+  if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+    return { errorName: name, message: 'No usable camera or microphone was found on this device.' };
+  }
+  if (name === 'NotReadableError' || name === 'TrackStartError') {
+    return { errorName: name, message: 'Camera or microphone is already being used by another app. Close it and try again.' };
+  }
+  return { errorName: name, message: 'Could not open camera and microphone. Please check device permissions and try again.' };
+};
+
 /**
- * Request camera + microphone permission. MUST be called from a user gesture
- * (e.g. a button click) — browsers/WebViews require this for getUserMedia.
- *
- * Returns true if both audio and video were granted (or already granted).
+ * Request camera + microphone from the browser/WebView. This must be called
+ * directly from a user click. Do not await Capacitor Camera first: that plugin
+ * only covers photo camera permission, not microphone, and can break the
+ * getUserMedia user-gesture chain on Android WebView.
  */
-export const requestCameraMicPermissions = async (): Promise<boolean> => {
+export const requestCameraMicStream = async (): Promise<CameraMicPermissionResult> => {
   try {
-    if (Capacitor.isNativePlatform()) {
-      const status = await Camera.requestPermissions();
-      if (status.camera !== 'granted' && status.camera !== 'limited') {
-        return false;
-      }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      return { granted: false, message: 'Camera and microphone are not available in this app view.' };
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-    // Immediately release — Daily will request its own stream.
-    stream.getTracks().forEach((t) => t.stop());
-    return true;
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+    });
+    return { granted: true, stream };
   } catch (err: unknown) {
     const name = err instanceof Error ? err.name : 'UnknownError';
     const message = err instanceof Error ? err.message : String(err);
     console.error('[perms] camera/mic denied', name, message);
-    return false;
+    return { granted: false, ...describeMediaError(err) };
   }
+};
+
+export const stopMediaStream = (stream: MediaStream | null | undefined) => {
+  stream?.getTracks().forEach((track) => track.stop());
+};
+
+export const requestCameraMicPermissions = async (): Promise<boolean> => {
+  const result = await requestCameraMicStream();
+  if (!result.granted) return false;
+  stopMediaStream(result.stream);
+  return true;
 };
 

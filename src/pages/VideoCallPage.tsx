@@ -5,7 +5,7 @@ import DailyIframe, { DailyCall } from '@daily-co/daily-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { requestCameraMicPermissions } from '@/utils/requestPermissions';
+import { requestCameraMicStream, stopMediaStream } from '@/utils/requestPermissions';
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> =>
   Promise.race([
@@ -22,16 +22,18 @@ type Status = 'idle' | 'requesting-perms' | 'loading-room' | 'in-prejoin' | 'in-
  *
  * Flow:
  *   1. Show our "Ready to join?" splash (lets user back out safely).
- *   2. On click: request native camera/mic perms (Capacitor + getUserMedia).
+ *   2. On click: request camera/mic via getUserMedia immediately to keep the
+ *      Android WebView user gesture alive.
  *   3. Fetch room URL + token from `daily-room` edge function.
- *   4. Mount Daily iframe with `showPrejoinUI: true` — Daily shows its own
- *      camera preview / mic test / device selector before joining.
+ *   4. Hand the already-open tracks to Daily and let Daily Prebuilt show the
+ *      room pre-join UI before the user actually joins.
  */
 const VideoCallPage: React.FC = () => {
   const { appointmentId } = useParams<{ appointmentId: string }>();
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
+  const previewStreamRef = useRef<MediaStream | null>(null);
 
   const [status, setStatus] = useState<Status>('idle');
   const [errorMsg, setErrorMsg] = useState<string>('');
@@ -44,11 +46,14 @@ const VideoCallPage: React.FC = () => {
     }
 
     setStatus('requesting-perms');
-    const granted = await requestCameraMicPermissions();
-    if (!granted) {
+    const permission = await requestCameraMicStream();
+    if (permission.granted === false) {
       setStatus('permission-denied');
+      setErrorMsg(permission.message);
       return;
     }
+    previewStreamRef.current = permission.stream;
+    const mediaStream = permission.stream;
 
     setStatus('loading-room');
     try {
@@ -66,10 +71,21 @@ const VideoCallPage: React.FC = () => {
       if (!data?.url || !data?.token) throw new Error('Invalid room response');
 
       if (!containerRef.current) throw new Error('Container not ready');
+      const audioTrack = mediaStream.getAudioTracks()[0];
+      const videoTrack = mediaStream.getVideoTracks()[0];
+      if (!audioTrack || !videoTrack) {
+        stopMediaStream(mediaStream);
+        previewStreamRef.current = null;
+        throw new Error('Camera and microphone did not open correctly. Please try again.');
+      }
 
       const frame = DailyIframe.createFrame(containerRef.current, {
+        url: data.url,
+        token: data.token,
         showLeaveButton: true,
         showFullscreenButton: true,
+        audioSource: audioTrack,
+        videoSource: videoTrack,
         iframeStyle: {
           position: 'absolute',
           width: '100%',
@@ -84,12 +100,15 @@ const VideoCallPage: React.FC = () => {
         navigate(-1);
       });
       frame.on('joined-meeting', () => {
+        previewStreamRef.current = null;
         setStatus('in-call');
       });
       frame.on('error', (e: { errorMsg?: string } | undefined) => {
         console.error('[daily] error', e);
         const message = e?.errorMsg ?? 'Daily could not connect to the call.';
         toast.error(message);
+        stopMediaStream(previewStreamRef.current);
+        previewStreamRef.current = null;
         setStatus('error');
         setErrorMsg(message);
       });
@@ -101,19 +120,27 @@ const VideoCallPage: React.FC = () => {
         }
       });
 
-      // Pre-auth so the iframe loads its pre-join UI without an extra round-trip.
-      await frame.preAuth({ url: data.url, token: data.token });
-      // Open Daily's built-in pre-join (camera preview, mic test, device selector).
-      await frame.startCamera();
-      await frame.join();
-      // status flips to 'in-call' via the 'joined-meeting' event above.
       setStatus('in-prejoin');
+      void frame.join().then(() => {
+        // Daily Prebuilt owns the tracks after join starts; do not stop them here.
+        previewStreamRef.current = null;
+      }).catch((err: unknown) => {
+        console.error('[daily] join failed', err);
+        const message = err instanceof Error ? err.message : 'Daily could not open the call.';
+        toast.error(message);
+        stopMediaStream(previewStreamRef.current);
+        previewStreamRef.current = null;
+        setStatus('error');
+        setErrorMsg(message);
+      });
     } catch (err: unknown) {
       console.error('[VideoCallPage] start failed', err);
       if (callRef.current) {
         await callRef.current.destroy().catch(() => {});
         callRef.current = null;
       }
+      stopMediaStream(previewStreamRef.current);
+      previewStreamRef.current = null;
       setStatus('error');
       setErrorMsg(err instanceof Error ? err.message : 'Could not start the call.');
     }
@@ -126,6 +153,8 @@ const VideoCallPage: React.FC = () => {
         callRef.current.destroy().catch(() => {});
         callRef.current = null;
       }
+      stopMediaStream(previewStreamRef.current);
+      previewStreamRef.current = null;
     };
   }, []);
 
@@ -183,7 +212,7 @@ const VideoCallPage: React.FC = () => {
                 <VideoOff className="mx-auto" size={40} />
                 <h2 className="text-xl font-semibold">Camera & microphone needed</h2>
                 <p className="text-white/70 text-sm">
-                  Please allow camera and microphone access in your device settings, then try again.
+                  {errorMsg || 'Please allow camera and microphone access in your device settings, then try again.'}
                 </p>
                 <Button onClick={startCall} className="w-full">Try Again</Button>
                 <Button variant="ghost" onClick={() => navigate(-1)} className="w-full text-white/70">

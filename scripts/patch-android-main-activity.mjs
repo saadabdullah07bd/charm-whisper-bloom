@@ -54,6 +54,7 @@ import ee.forgr.capacitor.social.login.SocialLoginPlugin;
 public class MainActivity extends BridgeActivity implements ModifiedMainActivityForSocialLoginPlugin {
 
     private static final int PERM_REQ_AV = 4242;
+    private PermissionRequest pendingMediaPermissionRequest;
 
     @Override
     public void IHaveModifiedTheMainActivityForTheUseWithSocialLoginPlugin() {}
@@ -88,12 +89,58 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> {
+                    java.util.ArrayList<String> toRequest = requiredAndroidPermissionsFor(request);
+                    if (!toRequest.isEmpty()) {
+                        pendingMediaPermissionRequest = request;
+                        ActivityCompat.requestPermissions(MainActivity.this, toRequest.toArray(new String[0]), PERM_REQ_AV);
+                        return;
+                    }
+
                     // Grant camera/mic to any origin requesting them inside our app's WebView.
                     // (Origins are constrained to the app's own pages and Daily's iframe.)
                     request.grant(request.getResources());
                 });
             }
         });
+    }
+
+    private java.util.ArrayList<String> requiredAndroidPermissionsFor(PermissionRequest request) {
+        java.util.ArrayList<String> toRequest = new java.util.ArrayList<>();
+        for (String resource : request.getResources()) {
+            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)
+                    && ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                toRequest.add(Manifest.permission.CAMERA);
+            }
+            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)
+                    && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                toRequest.add(Manifest.permission.RECORD_AUDIO);
+            }
+        }
+        return toRequest;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != PERM_REQ_AV || pendingMediaPermissionRequest == null) {
+            return;
+        }
+
+        boolean granted = true;
+        for (int result : grantResults) {
+            if (result != PackageManager.PERMISSION_GRANTED) {
+                granted = false;
+                break;
+            }
+        }
+
+        PermissionRequest request = pendingMediaPermissionRequest;
+        pendingMediaPermissionRequest = null;
+        if (granted) {
+            request.grant(request.getResources());
+        } else {
+            request.deny();
+        }
     }
 
 
