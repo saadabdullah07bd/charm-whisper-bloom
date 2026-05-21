@@ -31,11 +31,16 @@ const packageLine = `package ${appId};`;
 
 const desiredMainActivity = `${packageLine}
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.content.Intent;
 import android.util.Log;
 import android.webkit.PermissionRequest;
 import android.webkit.WebView;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
@@ -48,12 +53,31 @@ import ee.forgr.capacitor.social.login.SocialLoginPlugin;
 
 public class MainActivity extends BridgeActivity implements ModifiedMainActivityForSocialLoginPlugin {
 
+    private static final int PERM_REQ_AV = 4242;
+
     @Override
     public void IHaveModifiedTheMainActivityForTheUseWithSocialLoginPlugin() {}
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Proactively request camera + microphone at runtime so the WebView
+        // can use getUserMedia without silently failing.
+        String[] needed = new String[] {
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.MODIFY_AUDIO_SETTINGS
+        };
+        java.util.ArrayList<String> toRequest = new java.util.ArrayList<>();
+        for (String p : needed) {
+            if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) {
+                toRequest.add(p);
+            }
+        }
+        if (!toRequest.isEmpty()) {
+            ActivityCompat.requestPermissions(this, toRequest.toArray(new String[0]), PERM_REQ_AV);
+        }
     }
 
     @Override
@@ -63,14 +87,15 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
         webView.setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
-                if (request.getOrigin().toString().contains("daily.co")) {
+                runOnUiThread(() -> {
+                    // Grant camera/mic to any origin requesting them inside our app's WebView.
+                    // (Origins are constrained to the app's own pages and Daily's iframe.)
                     request.grant(request.getResources());
-                } else {
-                    super.onPermissionRequest(request);
-                }
+                });
             }
         });
     }
+
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
