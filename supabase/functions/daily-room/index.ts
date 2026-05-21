@@ -92,39 +92,46 @@ Deno.serve(async (req) => {
       start_audio_off: false,
     };
 
-    let getRes = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, { headers: dailyHeaders });
+    const fetchWithTimeout = async (url: string, init: RequestInit, ms = 8000) => {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), ms);
+      try {
+        return await fetch(url, { ...init, signal: ctrl.signal });
+      } finally {
+        clearTimeout(t);
+      }
+    };
+
+    console.log("[daily-room] fetching room", roomName);
+    let getRes: Response;
+    try {
+      getRes = await fetchWithTimeout(`https://api.daily.co/v1/rooms/${roomName}`, { headers: dailyHeaders });
+    } catch (e) {
+      console.error("[daily-room] GET room failed/timeout:", e);
+      return json({ error: "Daily room fetch timeout", detail: String(e) }, 504);
+    }
     let room: any = null;
     if (getRes.ok) {
       room = await getRes.json();
-      // Make sure existing rooms also have prejoin + effects enabled — patch idempotently.
-      if (
-        room?.config?.enable_prejoin_ui !== true ||
-        room?.config?.enable_video_processing_ui !== true
-      ) {
-        const patchRes = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+      console.log("[daily-room] room exists", { url: room?.url });
+    } else if (getRes.status === 404) {
+      console.log("[daily-room] room not found, creating");
+      const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
+      let createRes: Response;
+      try {
+        createRes = await fetchWithTimeout(`https://api.daily.co/v1/rooms`, {
           method: "POST",
           headers: dailyHeaders,
           body: JSON.stringify({
-            properties: {
-              enable_prejoin_ui: true,
-              enable_video_processing_ui: true,
-            },
+            name: roomName,
+            privacy: "public",
+            properties: { exp, ...roomProps },
           }),
         });
-        if (patchRes.ok) room = await patchRes.json();
+      } catch (e) {
+        console.error("[daily-room] create room failed/timeout:", e);
+        return json({ error: "Daily room create timeout", detail: String(e) }, 504);
       }
-    } else if (getRes.status === 404) {
-      // Expire 24h from now so stale rooms don't pile up.
-      const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
-      const createRes = await fetch(`https://api.daily.co/v1/rooms`, {
-        method: "POST",
-        headers: dailyHeaders,
-        body: JSON.stringify({
-          name: roomName,
-          privacy: "public",
-          properties: { exp, ...roomProps },
-        }),
-      });
       if (!createRes.ok) {
         const txt = await createRes.text();
         console.error("Daily room create failed:", txt);
@@ -133,25 +140,33 @@ Deno.serve(async (req) => {
       room = await createRes.json();
     } else {
       const txt = await getRes.text();
-      console.error("Daily room fetch failed:", txt);
-      return json({ error: "Could not fetch room", detail: txt }, 500);
+      console.error("Daily room fetch failed:", getRes.status, txt);
+      return json({ error: "Could not fetch room", detail: txt, status: getRes.status }, 500);
     }
 
     // Issue a meeting token so we control identity & owner status.
+    console.log("[daily-room] minting meeting token");
     const tokenExp = Math.floor(Date.now() / 1000) + 60 * 60 * 6;
-    const tokenRes = await fetch(`https://api.daily.co/v1/meeting-tokens`, {
-      method: "POST",
-      headers: dailyHeaders,
-      body: JSON.stringify({
-        properties: {
-          room_name: roomName,
-          user_name: (displayName as string) || userEmail || (isDoctor ? "Doctor" : "Patient"),
-          is_owner: isDoctor,
-          exp: tokenExp,
-        },
-      }),
-    });
+    let tokenRes: Response;
+    try {
+      tokenRes = await fetchWithTimeout(`https://api.daily.co/v1/meeting-tokens`, {
+        method: "POST",
+        headers: dailyHeaders,
+        body: JSON.stringify({
+          properties: {
+            room_name: roomName,
+            user_name: (displayName as string) || userEmail || (isDoctor ? "Doctor" : "Patient"),
+            is_owner: isDoctor,
+            exp: tokenExp,
+          },
+        }),
+      });
+    } catch (e) {
+      console.error("[daily-room] token mint failed/timeout:", e);
+      return json({ error: "Daily token timeout", detail: String(e) }, 504);
+    }
     const meetingToken = tokenRes.ok ? (await tokenRes.json())?.token : null;
+    if (!tokenRes.ok) console.warn("[daily-room] token mint non-OK", tokenRes.status);
 
     // Persist room marker so the appointment shows "video ready".
     if (!apt.google_meet_link) {
