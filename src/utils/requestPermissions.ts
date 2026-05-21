@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { Camera } from '@capacitor/camera';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Preferences } from '@capacitor/preferences';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +71,13 @@ export const requestNotificationPermissionOnStart = async () => {
  */
 export const requestCameraMicPermissions = async (): Promise<boolean> => {
   try {
+    if (Capacitor.isNativePlatform()) {
+      const status = await Camera.requestPermissions();
+      if (status.camera !== 'granted' && status.camera !== 'limited') {
+        return false;
+      }
+    }
+
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
     // Immediately release — Daily will request its own stream.
     stream.getTracks().forEach((t) => t.stop());
