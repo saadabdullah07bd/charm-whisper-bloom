@@ -59,21 +59,69 @@ This creates the `android/` folder. Commit it.
 
 The script also patches `android/app/src/main/java/.../MainActivity.java` so Google Sign-In can receive the native authorization result after account selection. Without this patch Android may show `Google Sign-In cancelled by user` even when the user selected an account.
 
-## 5. Build the APK
-
-Every time you change web code:
+## 5. Build the debug APK (for testing)
 
 ```bash
 bun run android:build       # debug APK
-# or
-bun run android:release     # release APK (needs a signing config in android/app/build.gradle)
 ```
 
 APK output:
-- Debug:   `android/app/build/outputs/apk/debug/app-debug.apk`
-- Release: `android/app/build/outputs/apk/release/app-release-unsigned.apk` (sign with `jarsigner` or use Android Studio → Build → Generate Signed Bundle/APK)
+- Debug: `android/app/build/outputs/apk/debug/app-debug.apk`
 
-## 6. Open in Android Studio (optional, for emulator / device run)
+---
+
+## 6. Build the release APK (official signing key)
+
+You said you already generated an SHA-1 key and registered it with Google. To build a **signed release APK**, you need to create one small properties file so Gradle can find your keystore.
+
+### Step A — Place your keystore file inside `android/`
+
+Copy your `.jks` or `.keystore` file into the `android/` folder. For example:
+
+```bash
+cp /path/to/your-key.jks android/shifora-release-key.jks
+```
+
+### Step B — Create `android/keystore.properties`
+
+Create a file named `android/keystore.properties` (do NOT commit this file to git — it contains passwords):
+
+```properties
+storeFile=shifora-release-key.jks
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyAlias=YOUR_KEY_ALIAS
+keyPassword=YOUR_KEY_PASSWORD
+```
+
+Replace the four values with your actual credentials.
+
+### Step C — Build the release APK
+
+Run this single command (it builds the web app, syncs Capacitor, patches native files, and produces the signed APK):
+
+```bash
+git pull
+bun install
+bun run cap:sync
+cd android && ./gradlew assembleRelease
+cd ..
+```
+
+The signed APK will be at:
+
+```
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+> 💡 The patch script (`scripts/patch-android-main-activity.mjs`) automatically injects the `signingConfigs.release` block into `android/app/build.gradle` every time you run `cap:sync`. So you only need to create `keystore.properties` once.
+
+---
+
+## 7. Open in Android Studio (optional, for emulator / device run)
+
+```bash
+bun run cap:open:android
+```
 
 ```bash
 bun run cap:open:android
