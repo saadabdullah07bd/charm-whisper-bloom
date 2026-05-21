@@ -52,7 +52,9 @@ const ProtectedRoute: React.FC<Props> = ({ children }) => {
     return <WelcomeOnboarding onDone={() => setWelcomeDoneState(true)} />;
   }
 
-  if (role === 'patient') {
+  // The /call route is shared by patients & doctors — don't redirect patients
+  // to their dashboard when navigating there.
+  if (role === 'patient' && !isCallRoute) {
     return <PatientDashboard />;
   }
 
