@@ -3,6 +3,7 @@ import { ExternalLink } from 'lucide-react';
 import { type PatientReport } from '@/types/medical';
 import ModalShell from '@/components/ModalShell';
 import InAppPdfViewer from '@/components/InAppPdfViewer';
+import ZoomableImage from '@/components/ZoomableImage';
 
 interface Props {
   report: PatientReport | null;
@@ -35,13 +36,8 @@ const ReportPreviewModal: React.FC<Props> = ({ report, onClose }) => {
             <InAppPdfViewer url={report.dataUrl} fileName={report.name} />
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-background p-3">
-            <img
-              src={report.dataUrl}
-              alt={report.name}
-              className="mx-auto max-h-[72vh] w-auto max-w-full object-contain"
-              loading="lazy"
-            />
+          <div className="h-[72vh] w-full rounded-xl border border-border bg-background overflow-hidden">
+            <ZoomableImage src={report.dataUrl} alt={report.name} />
           </div>
         )}
       </div>
