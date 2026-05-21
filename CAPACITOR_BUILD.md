@@ -104,27 +104,44 @@ bun run cap:open:android
 
 ---
 
-## Video call camera / microphone permissions
+## Video call — native Daily Android SDK
 
-The video call uses the in-app WebView. The Android patch script
-(`scripts/patch-android-main-activity.mjs`) automatically:
+On Android, video calls now run on the **native Daily Client SDK**
+(`co.daily:client:0.37.0`) — NOT inside the WebView. Web and iOS still use
+the `@daily-co/daily-js` iframe.
 
-- Adds `CAMERA`, `RECORD_AUDIO`, `POST_NOTIFICATIONS`,
-  `MODIFY_AUDIO_SETTINGS`, `BLUETOOTH_CONNECT`
-  permissions to `AndroidManifest.xml`.
-- Installs a small `ShiforaMediaPermissions` Capacitor bridge so the React app
-  can request native camera + microphone permission right before joining a call.
-- Installs a `WebChromeClient.onPermissionRequest` hook in `MainActivity`
-  that translates Daily.co's `getUserMedia()` request into a real Android
-  runtime permission dialog (so users don't see the "tap the lock icon in
-  your browser" message).
-- Requests notification permission on first app launch; camera + microphone are
-  requested only when the user starts a video appointment.
+The Android patch script (`scripts/patch-android-main-activity.mjs`) runs on
+every `bun run cap:sync` and automatically:
 
-The iOS patch script (`scripts/patch-ios-info-plist.mjs`) adds
+- Adds Kotlin support + Daily SDK deps to `android/app/build.gradle`, and
+  `mavenCentral()` + the Kotlin Gradle plugin to `android/build.gradle`.
+- Bumps `minSdkVersion` to 23 (Daily SDK requirement).
+- Adds all required perms to `AndroidManifest.xml`: `CAMERA`, `RECORD_AUDIO`,
+  `MODIFY_AUDIO_SETTINGS`, `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`,
+  `FOREGROUND_SERVICE_CAMERA`, `FOREGROUND_SERVICE_MICROPHONE`,
+  `BLUETOOTH_CONNECT`.
+- Generates a small custom Capacitor plugin (`daily/DailyCallPlugin.kt`) +
+  fullscreen native call Activity (`daily/DailyCallActivity.kt`) +
+  foreground service (`daily/DailyCallService.kt`).
+- Native call UI includes a prejoin preview (mic, cam, flip) and in-call
+  controls (mic toggle, camera toggle, flip camera, leave).
+
+React side calls into the plugin via `src/lib/nativeDailyCall.ts`. The same
+appointment DB updates (`doctor_joined_at`, `patient_joined_at`,
+`*_left_at`, `meeting_quality`, status transitions) run whether the call is
+native or iframe.
+
+The iOS patch script (`scripts/patch-ios-info-plist.mjs`) still adds
 `NSCameraUsageDescription`, `NSMicrophoneUsageDescription` and
-`NSPhotoLibraryUsageDescription` to `Info.plist`.
+`NSPhotoLibraryUsageDescription` to `Info.plist` (iOS uses the iframe).
 
-Both run automatically as part of `bun run cap:sync`. If you ever regenerate
-the native projects, just re-run `bun run cap:sync` (or
-`bun run cap:patch`) to re-apply them.
+Both run automatically as part of `bun run cap:sync`. After pulling these
+changes, run:
+
+```bash
+bun install
+bun run cap:sync
+cd android && ./gradlew clean && cd ..
+bun run android:build
+```
+
