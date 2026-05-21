@@ -899,10 +899,50 @@ if (existsSync(appGradlePath)) {
   // Bump minSdkVersion to >= 23 (Daily requires 21, demo uses 23)
   g = g.replace(/minSdkVersion\s+(\d+)/, (m, v) => (parseInt(v, 10) < 23 ? 'minSdkVersion 23' : m));
 
+  // ── Release signing config (reads from android/keystore.properties) ──
+  if (!/keystoreProperties/.test(g)) {
+    g = g.replace(
+      /android\s*\{/,
+      `def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {`,
+    );
+  }
+
+  if (!/signingConfigs\s*\{/.test(g)) {
+    g = g.replace(
+      /(\n\s*buildTypes\s*\{)/,
+      `\n    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {`,
+    );
+  }
+
+  if (!/signingConfig signingConfigs\.release/.test(g)) {
+    g = g.replace(
+      /(release\s*\{[\s\S]*?)(minifyEnabled\s+\w+)/,
+      `$1signingConfig signingConfigs.release\n            $2`,
+    );
+  }
+
   if (g !== before) {
     writeFileSync(appGradlePath, g);
-    console.log('[cap:patch-main] Patched android/app/build.gradle (kotlin + Daily deps).');
+    console.log('[cap:patch-main] Patched android/app/build.gradle (kotlin + Daily deps + signing).');
   }
 }
+
 
 console.log('[cap:patch-main] Done.');
