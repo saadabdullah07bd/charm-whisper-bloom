@@ -144,34 +144,43 @@ Deno.serve(async (req) => {
       return json({ error: "Could not fetch room", detail: txt, status: getRes.status }, 500);
     }
 
-    // Issue a meeting token so we control identity & owner status.
+    // Issue a meeting token so we control identity & owner status. Token minting is
+    // optional because rooms are public; never block opening the call if Daily's
+    // token endpoint is slow, which caused mobile clients to report a failed request.
     console.log("[daily-room] minting meeting token");
     const tokenExp = Math.floor(Date.now() / 1000) + 60 * 60 * 6;
-    let tokenRes: Response;
-    try {
-      tokenRes = await fetchWithTimeout(`https://api.daily.co/v1/meeting-tokens`, {
-        method: "POST",
-        headers: dailyHeaders,
-        body: JSON.stringify({
-          properties: {
-            room_name: roomName,
-            user_name: (displayName as string) || userEmail || (isDoctor ? "Doctor" : "Patient"),
-            is_owner: isDoctor,
-            exp: tokenExp,
-          },
-        }),
+    const tokenPromise = fetchWithTimeout(`https://api.daily.co/v1/meeting-tokens`, {
+      method: "POST",
+      headers: dailyHeaders,
+      body: JSON.stringify({
+        properties: {
+          room_name: roomName,
+          user_name: (displayName as string) || userEmail || (isDoctor ? "Doctor" : "Patient"),
+          is_owner: isDoctor,
+          exp: tokenExp,
+        },
+      }),
+    }, 2500)
+      .then(async (tokenRes) => {
+        if (!tokenRes.ok) {
+          console.warn("[daily-room] token mint non-OK", tokenRes.status, await tokenRes.text());
+          return null;
+        }
+        return (await tokenRes.json())?.token ?? null;
+      })
+      .catch((e) => {
+        console.warn("[daily-room] token mint skipped:", String(e));
+        return null;
       });
-    } catch (e) {
-      console.error("[daily-room] token mint failed/timeout:", e);
-      return json({ error: "Daily token timeout", detail: String(e) }, 504);
-    }
-    const meetingToken = tokenRes.ok ? (await tokenRes.json())?.token : null;
-    if (!tokenRes.ok) console.warn("[daily-room] token mint non-OK", tokenRes.status);
+    const meetingToken = await Promise.race([
+      tokenPromise,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 2600)),
+    ]);
 
     // Persist room marker so the appointment shows "video ready".
     if (!apt.google_meet_link) {
       await supabase.from("appointments").update({
-        google_meet_link: `daily:${roomName}`,
+        google_meet_link: room.url,
         google_event_id: roomName,
         updated_at: new Date().toISOString(),
       }).eq("id", appointmentId);
