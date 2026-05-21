@@ -19,9 +19,16 @@ interface DailyCallPluginShape {
 
 const DailyCall = registerPlugin<DailyCallPluginShape>('DailyCall');
 
-/** True when running on Android in a Capacitor native shell (where the native Daily SDK is wired). */
-export function canUseNativeDaily(): boolean {
-  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
+/** True when running on Android in a Capacitor native shell AND the native DailyCall plugin is actually registered in this APK. */
+export async function canUseNativeDaily(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') return false;
+  try {
+    const res = await DailyCall.isAvailable();
+    return !!res?.available;
+  } catch (err) {
+    console.warn('[nativeDaily] plugin not available, falling back to iframe', err);
+    return false;
+  }
 }
 
 export async function startNativeDailyCall(opts: {
