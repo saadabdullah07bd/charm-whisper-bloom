@@ -10,6 +10,7 @@ const mediaPermissionsPluginPath = join(javaDir, 'ShiforaMediaPermissionsPlugin.
 const dailyPluginPath = join(javaDir, 'daily', 'DailyCallPlugin.kt');
 const dailyActivityPath = join(javaDir, 'daily', 'DailyCallActivity.kt');
 const dailyServicePath = join(javaDir, 'daily', 'DailyCallService.kt');
+const dailyScreenShareServicePath = join(javaDir, 'daily', 'DailyScreenShareService.kt');
 const manifestPath = join('android', 'app', 'src', 'main', 'AndroidManifest.xml');
 const appGradlePath = join('android', 'app', 'build.gradle');
 const projectGradlePath = join('android', 'build.gradle');
