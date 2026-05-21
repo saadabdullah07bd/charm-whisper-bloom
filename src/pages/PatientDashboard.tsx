@@ -547,6 +547,12 @@ const PatientDashboard: React.FC = () => {
   };
 
   const handleViewReport = async (report: ReportRecord) => {
+    // If caller already prepared a signed URL (e.g. doctor-issued prescription from a different bucket), use it directly.
+    const preSigned = (report as any)._signedUrl as string | undefined;
+    if (preSigned) {
+      setViewingReport({ name: report.fileName, url: preSigned, type: report.fileType || '' });
+      return;
+    }
     const { data } = await supabase.storage.from('patient-reports').createSignedUrl(report.filePath, 3600);
     if (data?.signedUrl) setViewingReport({ name: report.fileName, url: data.signedUrl, type: report.fileType || '' });
   };
@@ -822,21 +828,38 @@ const PatientDashboard: React.FC = () => {
       />
 
 
-      {/* ── Report Viewer Modal ── */}
+      {/* ── Report Viewer Modal (in-app — never redirects to browser) ── */}
       {viewingReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'hsl(var(--background)/0.5)', backdropFilter: 'blur(24px)' }} onClick={() => setViewingReport(null)}>
-          <div className="max-w-2xl w-full max-h-[85vh] overflow-auto animate-in zoom-in-95 fade-in duration-200 rounded-3xl border border-border/30 shadow-2xl" style={{ background: 'hsl(var(--card)/0.85)', backdropFilter: 'blur(40px)' }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-border/20">
-              <p className="text-sm font-semibold truncate">{viewingReport.name}</p>
-              <button onClick={() => setViewingReport(null)} className="w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" style={{ background: 'hsl(var(--muted)/0.3)' }}>
-                <X size={14} />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" style={{ background: 'hsl(var(--background)/0.6)', backdropFilter: 'blur(24px)' }} onClick={() => setViewingReport(null)}>
+          <div className="max-w-4xl w-full h-[92vh] sm:h-[88vh] flex flex-col animate-in zoom-in-95 fade-in duration-200 rounded-3xl border border-border/30 shadow-2xl overflow-hidden" style={{ background: 'hsl(var(--card)/0.95)', backdropFilter: 'blur(40px)' }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border/20 shrink-0">
+              <p className="text-sm font-semibold truncate flex-1 min-w-0 pr-3">{viewingReport.name}</p>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={viewingReport.url}
+                  download={viewingReport.name}
+                  className="h-8 px-3 rounded-xl flex items-center gap-1.5 text-xs font-medium border border-border/30 hover:bg-foreground/5 transition-colors"
+                >
+                  <Download size={13} />
+                  <span className="hidden sm:inline">{t('common.download') || 'Download'}</span>
+                </a>
+                <button onClick={() => setViewingReport(null)} className="w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" style={{ background: 'hsl(var(--muted)/0.3)' }} aria-label="Close">
+                  <X size={14} />
+                </button>
+              </div>
             </div>
-            <div className="p-5">
+            <div className="flex-1 min-h-0 overflow-auto bg-muted/20">
               {viewingReport.type.startsWith('image/') ? (
-                <img src={viewingReport.url} alt={viewingReport.name} className="w-full rounded-2xl" />
+                <div className="w-full h-full flex items-center justify-center p-4">
+                  <img src={viewingReport.url} alt={viewingReport.name} className="max-w-full max-h-full object-contain rounded-2xl" />
+                </div>
               ) : (
-                <iframe src={viewingReport.url} className="w-full h-[65vh] rounded-2xl border border-border/30" />
+                <iframe
+                  src={viewingReport.url}
+                  title={viewingReport.name}
+                  className="w-full h-full border-0"
+                  allow="fullscreen"
+                />
               )}
             </div>
           </div>
@@ -1453,7 +1476,16 @@ const FilesTab: React.FC<{
   const handleDoctorRxView = async (r: ReportRecord) => {
     const { data, error } = await supabase.storage.from('prescriptions').createSignedUrl(r.filePath, 3600);
     if (error || !data) { toast.error('Cannot open file'); return; }
-    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+    // Open inside the in-app modal — never redirect to an external browser.
+    onView({ ...r, filePath: r.filePath, fileName: r.fileName, fileType: r.fileType, _signedUrl: data.signedUrl } as any);
+  };
+  const handleDoctorRxDownload = async (r: ReportRecord) => {
+    const { data, error } = await supabase.storage.from('prescriptions').createSignedUrl(r.filePath, 3600);
+    if (error || !data) { toast.error('Cannot download file'); return; }
+    const a = document.createElement('a');
+    a.href = data.signedUrl;
+    a.download = r.fileName || 'prescription.pdf';
+    a.click();
   };
 
   // Merge doctor-issued prescriptions + patient-uploaded previous prescriptions, sorted by date.
@@ -1467,7 +1499,7 @@ const FilesTab: React.FC<{
     return onView(r);
   };
   const handleDownloadMixed = (r: ReportRecord) => {
-    if ((r as any)._bucket === 'prescriptions') return handleDoctorRxView(r);
+    if ((r as any)._bucket === 'prescriptions') return handleDoctorRxDownload(r);
     return onDownload(r);
   };
 

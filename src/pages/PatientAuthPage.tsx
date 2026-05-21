@@ -62,7 +62,15 @@ const PatientAuthPage: React.FC<{ onSwitchToDoctor?: () => void }> = () => {
         </button>
       </div>
 
-      <div className="w-full max-w-md" style={{ animation: 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
+      <div className="w-full max-w-md auth-rise">
+        <style>{`
+          .auth-rise { animation: authRise 0.35s ease-out both; will-change: transform, opacity; }
+          @keyframes authRise {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          @media (prefers-reduced-motion: reduce) { .auth-rise { animation: none !important; } }
+        `}</style>
         <Card className="overflow-hidden">
           <CardHeader className="text-center items-center">
             <img src={shiforaLogo} alt="Shifora" className="w-16 h-16 rounded-2xl mb-2 shadow-lg" />
