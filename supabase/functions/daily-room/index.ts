@@ -54,7 +54,9 @@ Deno.serve(async (req) => {
       return json({ error: "Appointment not found", appointmentId, details: aptErr?.message }, 404);
     }
 
-    const patientUserId = (apt as any).patients?.user_id ?? null;
+    const appointment = apt as { patients?: { user_id?: string | null } | { user_id?: string | null }[] | null };
+    const joinedPatient = Array.isArray(appointment.patients) ? appointment.patients[0] : appointment.patients;
+    const patientUserId = joinedPatient?.user_id ?? null;
     const isPatient = patientUserId && patientUserId === user.id;
     // Doctor check: any user with the doctor role.
     let isDoctor = false;
@@ -62,7 +64,7 @@ Deno.serve(async (req) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
-    isDoctor = (roles ?? []).some((r: any) => r.role === "doctor");
+    isDoctor = ((roles ?? []) as Array<{ role?: string }>).some((r) => r.role === "doctor");
 
     // TESTING MODE: allow any authenticated user to join. Tighten before prod.
     const allowAnyAuthed = true;
@@ -75,6 +77,7 @@ Deno.serve(async (req) => {
 
     // Ensure room exists (idempotent).
     const expSec = Math.floor(Date.now() / 1000) + 60 * 60 * 4; // 4h
+    let roomUrl = "";
     const getRoom = await fetch(`${DAILY_API}/rooms/${roomName}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
@@ -100,10 +103,17 @@ Deno.serve(async (req) => {
         const txt = await create.text();
         return json({ error: "Failed to create room", details: txt }, 500);
       }
+      const createdRoom = await create.json();
+      roomUrl = createdRoom?.url ?? "";
     } else if (!getRoom.ok) {
       const txt = await getRoom.text();
       return json({ error: "Failed to fetch room", details: txt }, 500);
+    } else {
+      const existingRoom = await getRoom.json();
+      roomUrl = existingRoom?.url ?? "";
     }
+
+    if (!roomUrl) return json({ error: "Daily room URL missing" }, 500);
 
     // Mint a meeting token.
     const tokenResp = await fetch(`${DAILY_API}/meeting-tokens`, {
@@ -126,7 +136,7 @@ Deno.serve(async (req) => {
     const { token: meetingToken } = await tokenResp.json();
 
     return json({
-      url: `https://${Deno.env.get("DAILY_SUBDOMAIN") ?? "drmabari"}.daily.co/${roomName}`,
+      url: roomUrl,
       token: meetingToken,
       roomName,
     });
