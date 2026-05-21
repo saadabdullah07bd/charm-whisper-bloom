@@ -855,12 +855,7 @@ const PatientDashboard: React.FC = () => {
                   <img src={viewingReport.url} alt={viewingReport.name} className="max-w-full max-h-full object-contain rounded-2xl" />
                 </div>
               ) : (
-                <iframe
-                  src={viewingReport.url}
-                  title={viewingReport.name}
-                  className="w-full h-full border-0"
-                  allow="fullscreen"
-                />
+                <InAppPdfViewer url={viewingReport.url} fileName={viewingReport.name} />
               )}
             </div>
           </div>
