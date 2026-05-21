@@ -82,8 +82,10 @@ export const requestCameraMicPermissions = async (): Promise<boolean> => {
     // Immediately release — Daily will request its own stream.
     stream.getTracks().forEach((t) => t.stop());
     return true;
-  } catch (err: any) {
-    console.error('[perms] camera/mic denied', err?.name, err?.message);
+  } catch (err: unknown) {
+    const name = err instanceof Error ? err.name : 'UnknownError';
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[perms] camera/mic denied', name, message);
     return false;
   }
 };
