@@ -1453,7 +1453,16 @@ const FilesTab: React.FC<{
   const handleDoctorRxView = async (r: ReportRecord) => {
     const { data, error } = await supabase.storage.from('prescriptions').createSignedUrl(r.filePath, 3600);
     if (error || !data) { toast.error('Cannot open file'); return; }
-    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+    // Open inside the in-app modal — never redirect to an external browser.
+    onView({ ...r, filePath: r.filePath, fileName: r.fileName, fileType: r.fileType, _signedUrl: data.signedUrl } as any);
+  };
+  const handleDoctorRxDownload = async (r: ReportRecord) => {
+    const { data, error } = await supabase.storage.from('prescriptions').createSignedUrl(r.filePath, 3600);
+    if (error || !data) { toast.error('Cannot download file'); return; }
+    const a = document.createElement('a');
+    a.href = data.signedUrl;
+    a.download = r.fileName || 'prescription.pdf';
+    a.click();
   };
 
   // Merge doctor-issued prescriptions + patient-uploaded previous prescriptions, sorted by date.
@@ -1467,7 +1476,7 @@ const FilesTab: React.FC<{
     return onView(r);
   };
   const handleDownloadMixed = (r: ReportRecord) => {
-    if ((r as any)._bucket === 'prescriptions') return handleDoctorRxView(r);
+    if ((r as any)._bucket === 'prescriptions') return handleDoctorRxDownload(r);
     return onDownload(r);
   };
 
