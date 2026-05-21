@@ -54,7 +54,9 @@ Deno.serve(async (req) => {
       return json({ error: "Appointment not found", appointmentId, details: aptErr?.message }, 404);
     }
 
-    const patientUserId = (apt as any).patients?.user_id ?? null;
+    const appointment = apt as { patients?: { user_id?: string | null } | { user_id?: string | null }[] | null };
+    const joinedPatient = Array.isArray(appointment.patients) ? appointment.patients[0] : appointment.patients;
+    const patientUserId = joinedPatient?.user_id ?? null;
     const isPatient = patientUserId && patientUserId === user.id;
     // Doctor check: any user with the doctor role.
     let isDoctor = false;
@@ -62,7 +64,7 @@ Deno.serve(async (req) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
-    isDoctor = (roles ?? []).some((r: any) => r.role === "doctor");
+    isDoctor = ((roles ?? []) as Array<{ role?: string }>).some((r) => r.role === "doctor");
 
     // TESTING MODE: allow any authenticated user to join. Tighten before prod.
     const allowAnyAuthed = true;
