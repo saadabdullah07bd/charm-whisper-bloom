@@ -10,6 +10,7 @@ import { Camera } from 'lucide-react';
 import PatientRegistrationForm from '@/components/PatientRegistrationForm';
 import BrandedSpinner from '@/components/BrandedSpinner';
 import InAppPdfViewer from '@/components/InAppPdfViewer';
+import ZoomableImage from '@/components/ZoomableImage';
 // PrescriptionPreview removed — replaced by uploaded-PDF list.
 import { useTheme } from '@/hooks/useTheme';
 import { toast } from 'sonner';
