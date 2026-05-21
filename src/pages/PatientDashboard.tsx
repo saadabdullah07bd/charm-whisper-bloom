@@ -547,6 +547,12 @@ const PatientDashboard: React.FC = () => {
   };
 
   const handleViewReport = async (report: ReportRecord) => {
+    // If caller already prepared a signed URL (e.g. doctor-issued prescription from a different bucket), use it directly.
+    const preSigned = (report as any)._signedUrl as string | undefined;
+    if (preSigned) {
+      setViewingReport({ name: report.fileName, url: preSigned, type: report.fileType || '' });
+      return;
+    }
     const { data } = await supabase.storage.from('patient-reports').createSignedUrl(report.filePath, 3600);
     if (data?.signedUrl) setViewingReport({ name: report.fileName, url: data.signedUrl, type: report.fileType || '' });
   };
