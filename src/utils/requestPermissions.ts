@@ -61,3 +61,22 @@ export const requestNotificationPermissionOnStart = async () => {
     console.error('Notification permission error:', error);
   }
 };
+
+/**
+ * Request camera + microphone permission. MUST be called from a user gesture
+ * (e.g. a button click) — browsers/WebViews require this for getUserMedia.
+ *
+ * Returns true if both audio and video were granted (or already granted).
+ */
+export const requestCameraMicPermissions = async (): Promise<boolean> => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+    // Immediately release — Daily will request its own stream.
+    stream.getTracks().forEach((t) => t.stop());
+    return true;
+  } catch (err: any) {
+    console.error('[perms] camera/mic denied', err?.name, err?.message);
+    return false;
+  }
+};
+
