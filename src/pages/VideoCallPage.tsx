@@ -47,7 +47,7 @@ const VideoCallPage: React.FC = () => {
 
     setStatus('requesting-perms');
     const permission = await requestCameraMicStream();
-    if (!permission.granted) {
+    if (permission.granted === false) {
       setStatus('permission-denied');
       setErrorMsg(permission.message);
       return;
@@ -118,13 +118,18 @@ const VideoCallPage: React.FC = () => {
       });
 
       setStatus('in-prejoin');
-      await withTimeout(
-        frame.join(),
-        45000,
-        'Daily took too long to open the call. Please check your internet connection and try again.',
-      );
-      // Daily Prebuilt owns the tracks after join starts; do not stop them here.
-      previewStreamRef.current = null;
+      void frame.join().then(() => {
+        // Daily Prebuilt owns the tracks after join starts; do not stop them here.
+        previewStreamRef.current = null;
+      }).catch((err: unknown) => {
+        console.error('[daily] join failed', err);
+        const message = err instanceof Error ? err.message : 'Daily could not open the call.';
+        toast.error(message);
+        stopMediaStream(previewStreamRef.current);
+        previewStreamRef.current = null;
+        setStatus('error');
+        setErrorMsg(message);
+      });
     } catch (err: unknown) {
       console.error('[VideoCallPage] start failed', err);
       if (callRef.current) {
@@ -204,7 +209,7 @@ const VideoCallPage: React.FC = () => {
                 <VideoOff className="mx-auto" size={40} />
                 <h2 className="text-xl font-semibold">Camera & microphone needed</h2>
                 <p className="text-white/70 text-sm">
-                  Please allow camera and microphone access in your device settings, then try again.
+                  {errorMsg || 'Please allow camera and microphone access in your device settings, then try again.'}
                 </p>
                 <Button onClick={startCall} className="w-full">Try Again</Button>
                 <Button variant="ghost" onClick={() => navigate(-1)} className="w-full text-white/70">
