@@ -1065,8 +1065,8 @@ const AppointmentsSection: React.FC<{
   const { i18n } = useTranslation();
   const isBn = (i18n.language || '').startsWith('bn');
   const calLocale = isBn ? bnLocale : enLocale;
-  const handleJoinCall = (apt: AppointmentRecord) => {
-    navigate(`/call/${apt.id}`);
+  const handleJoinCall = (_apt: AppointmentRecord) => {
+    toast.info('Video call feature has been removed.');
   };
   const statusStyle: Record<string, { bg: string; text: string }> = {
     pending: { bg: 'hsl(38 92% 50% / 0.1)', text: 'hsl(38 92% 40%)' },

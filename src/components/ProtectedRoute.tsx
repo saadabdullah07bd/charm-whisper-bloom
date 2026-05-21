@@ -7,7 +7,7 @@ import PatientDashboard from "@/pages/PatientDashboard";
 import WelcomeOnboarding from "@/components/WelcomeOnboarding";
 import { isWelcomeDone } from "@/lib/welcomePrefs";
 import BrandedSpinner from "@/components/BrandedSpinner";
-import { useLocation } from "react-router-dom";
+
 
 interface Props {
   children: React.ReactNode;
@@ -18,7 +18,7 @@ const ProtectedRoute: React.FC<Props> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [welcomeDone, setWelcomeDoneState] = useState<boolean>(() => isWelcomeDone());
   const { role, loading: roleLoading } = useUserRole();
-  const location = useLocation();
+  
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -44,15 +44,11 @@ const ProtectedRoute: React.FC<Props> = ({ children }) => {
     return <PatientAuthPage />;
   }
 
-  if (!welcomeDone && !location.pathname.startsWith('/call/')) {
+  if (!welcomeDone) {
     return <WelcomeOnboarding onDone={() => setWelcomeDoneState(true)} />;
   }
 
   if (role === 'patient') {
-    if (location.pathname.startsWith('/call/')) {
-      return <>{children}</>;
-    }
-
     return <PatientDashboard />;
   }
 

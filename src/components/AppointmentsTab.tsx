@@ -86,17 +86,8 @@ const AppointmentsTab: React.FC = () => {
     return () => clearInterval(id);
   }, []);
 
-  const handleJoinCall = (apt: Appointment) => {
-    const w = getJoinWindowState(apt.appointment_date, apt.time_slot, new Date(), { status: apt.status, patientId: apt.patient_id });
-    if (w.ended) {
-      toast.error(t('apptTab.callWindowEnded'));
-      return;
-    }
-    if (!w.canJoin) {
-      toast.error(t('apptTab.callNotStarted', { label: w.label }));
-      return;
-    }
-    navigate(`/call/${apt.id}`);
+  const handleJoinCall = (_apt: Appointment) => {
+    toast.info('Video call feature has been removed.');
   };
 
   // Doctor manually ends a session early — closes the re-join window so the

@@ -11,8 +11,6 @@ import SplashScreen from "./components/SplashScreen";
 // Fire-and-forget native initialisers (no-ops on web).
 initNativeAuth().catch((e) => console.warn("[nativeAuth init]", e));
 // Notification permission: asked ONCE on first launch (gated by Preferences).
-// Camera + microphone are NOT requested here — they're requested right before
-// joining a Daily video call (see VideoCallPage).
 requestNotificationPermissionOnStart().catch((e) => console.warn("[push init]", e));
 
 // Hide the native (Capacitor) splash as soon as our React splash is mounted,

@@ -1,11 +1,11 @@
-// Helpers for the time window during which the video call can be joined.
+// Helpers for the time window around an appointment slot.
 
 export const JOIN_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 export const REMINDER_LEAD_MS = 10 * 60 * 1000; // 10 minutes before start
 
-/** Test patients for whom the Start Video Call button is ALWAYS available. */
+/** Test patients for whom the appointment is ALWAYS marked available. */
 export const ALWAYS_JOIN_PATIENT_IDS = new Set<string>([
-  '44857ea3-ba82-4825-bca4-d6e6013e777e', // Rahim Ahmed (daily.co test account)
+  '44857ea3-ba82-4825-bca4-d6e6013e777e', // Rahim Ahmed (test account)
 ]);
 
 export function parseAppointmentDateTime(date: string, time: string): Date | null {
