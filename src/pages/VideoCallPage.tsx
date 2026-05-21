@@ -8,12 +8,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { getDailyJoin } from '@/lib/dailyRoom';
 import { toast } from 'sonner';
 import { requestCameraAndMicForVideoCall } from '@/utils/requestPermissions';
+import { canUseNativeDaily, startNativeDailyCall } from '@/lib/nativeDailyCall';
 
 function getFallbackPath(role: 'doctor' | 'patient' | null) {
   return role === 'patient' ? '/patient/appointments' : '/dashboard/appointments';
 }
 
-/** Internal: classify meeting quality from a duration. */
 function classifyMeetingQuality(durationMs: number, bothJoined: boolean): 'completed' | 'short' | 'failed' {
   if (!bothJoined) return 'failed';
   if (durationMs >= 10 * 60 * 1000) return 'completed';
@@ -32,6 +32,7 @@ export default function VideoCallPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
   const joinedAtRef = useRef<number | null>(null);
+  const nativeStartedRef = useRef(false);
 
   const closeToAppointments = useCallback(() => {
     navigate(getFallbackPath(role), { replace: true });
@@ -53,7 +54,6 @@ export default function VideoCallPage() {
     document.title = `${t('video.title')} — Shifora`;
   }, [t]);
 
-  // ── Doctor post-call actions ──
   const finishSession = async () => {
     if (!appointmentId) return;
     setPromptBusy(true);
@@ -80,13 +80,11 @@ export default function VideoCallPage() {
   const askPatientToRejoin = async () => {
     if (!appointmentId) return;
     setPromptBusy(true);
-    // Keep status so the join window stays open; flag quality as needing follow-up.
     await supabase.from('appointments').update({
       status: 'awaiting_prescription',
       meeting_quality: 'needs_rejoin',
       updated_at: new Date().toISOString(),
     } as never).eq('id', appointmentId);
-    // Log a patient-facing notification for the dashboard to surface.
     await (supabase as any).from('notification_logs').insert({
       type: 'rejoin_request',
       channel: 'in_app',
@@ -100,10 +98,7 @@ export default function VideoCallPage() {
   };
 
   useEffect(() => {
-    if (!appointmentId || roleLoading || !containerRef.current) {
-      return;
-    }
-
+    if (!appointmentId || roleLoading) return;
     if (!role) {
       setError('Your account role was not found. Please sign out and sign in again.');
       setLoading(false);
@@ -117,8 +112,6 @@ export default function VideoCallPage() {
         setLoading(true);
         setError(null);
 
-        // Ask for camera + microphone right before joining (native only).
-        // On web, Daily handles the browser prompt itself.
         const perms = await requestCameraAndMicForVideoCall();
         if (!perms.ok) {
           const missing = [
@@ -134,33 +127,81 @@ export default function VideoCallPage() {
           return;
         }
 
-        // NOTE: We deliberately do NOT call getUserMedia({video:true}) here as a
-        // pre-flight for Daily. Inside the Capacitor WebView that promise can
-        // hang waiting for our WebChromeClient.onPermissionRequest hook. Daily
-        // will request camera/mic itself once we call join().
-
         const { data: { user } } = await supabase.auth.getUser();
-        const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || (role === 'doctor' ? 'Doctor' : 'Patient');
+        const displayName = user?.user_metadata?.full_name
+          || user?.email?.split('@')[0]
+          || (role === 'doctor' ? 'Doctor' : 'Patient');
 
-        // Safety timeout — if getDailyJoin doesn't return within 15s, surface
-        // an error instead of leaving the spinner up forever.
         console.info('[video] requesting Daily room', { appointmentId, role });
-        const joinPromise = getDailyJoin(appointmentId, displayName);
-        const timeoutPromise = new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), 15000),
-        );
-        const join = await Promise.race([joinPromise, timeoutPromise]);
+        const join = await Promise.race([
+          getDailyJoin(appointmentId, displayName),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 15000)),
+        ]);
 
         if (cancelled) return;
-
-        if (!join || !containerRef.current) {
+        if (!join) {
           setError(t('video.couldNotStart') + ' (timeout or no room)');
           setLoading(false);
           return;
         }
 
-        console.info('[video] Daily room ready', { room: join.room, isDoctor: join.isDoctor });
+        // ── Native Android path: hand off to DailyCallActivity ──
+        if (canUseNativeDaily()) {
+          if (nativeStartedRef.current) return;
+          nativeStartedRef.current = true;
+          setLoading(false);
 
+          // Mark joined_at when handing off (the native UI takes over from here)
+          joinedAtRef.current = Date.now();
+          const joinPatch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+          if (role === 'doctor') {
+            joinPatch.status = 'in_call';
+            joinPatch.doctor_joined_at = new Date().toISOString();
+          } else {
+            joinPatch.patient_joined_at = new Date().toISOString();
+          }
+          await supabase.from('appointments').update(joinPatch as never).eq('id', appointmentId);
+
+          try {
+            const result = await startNativeDailyCall({
+              url: join.url,
+              token: join.token,
+              userName: displayName,
+              isDoctor: role === 'doctor',
+            });
+
+            const leftField = role === 'doctor' ? 'doctor_left_at' : 'patient_left_at';
+            const leftPatch: Record<string, unknown> = {
+              [leftField]: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            if (role === 'doctor') leftPatch.status = 'awaiting_prescription';
+            await supabase.from('appointments').update(leftPatch as never).eq('id', appointmentId);
+
+            if (!cancelled) {
+              if (role === 'doctor' && result.joined) {
+                setShowDoctorPrompt(true);
+              } else {
+                closeToAppointments();
+              }
+            }
+          } catch (err) {
+            console.error('Native Daily call failed:', err);
+            if (!cancelled) {
+              const msg = err instanceof Error ? err.message : String(err);
+              setError(`${t('video.couldNotConnect')} — ${msg}`);
+            }
+          }
+          return;
+        }
+
+        // ── Web / iOS fallback: in-browser Daily iframe ──
+        if (!containerRef.current) {
+          setError(t('video.couldNotStart'));
+          setLoading(false);
+          return;
+        }
+        console.info('[video] Daily room ready (iframe)', { room: join.room });
 
         const call = DailyIframe.createFrame(containerRef.current, {
           showLeaveButton: true,
@@ -172,7 +213,6 @@ export default function VideoCallPage() {
             border: '0',
           },
         });
-
         callRef.current = call;
 
         call.on('joined-meeting', async () => {
@@ -193,17 +233,11 @@ export default function VideoCallPage() {
             [leftField]: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
-          if (role === 'doctor') {
-            patch.status = 'awaiting_prescription';
-          }
+          if (role === 'doctor') patch.status = 'awaiting_prescription';
           await supabase.from('appointments').update(patch as never).eq('id', appointmentId);
 
-          if (role === 'doctor') {
-            // Don't auto-close yet — show the "Was the meeting completed?" prompt.
-            setShowDoctorPrompt(true);
-          } else {
-            closeToAppointments();
-          }
+          if (role === 'doctor') setShowDoctorPrompt(true);
+          else closeToAppointments();
         });
 
         call.on('error', (event: unknown) => {
@@ -215,10 +249,7 @@ export default function VideoCallPage() {
         });
 
         await call.join({ url: join.url, token: join.token ?? undefined });
-
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       } catch (err) {
         console.error('Daily join failed:', err);
         if (!cancelled) {
@@ -236,11 +267,7 @@ export default function VideoCallPage() {
       const call = callRef.current;
       callRef.current = null;
       if (call) {
-        try {
-          call.destroy();
-        } catch {
-          // noop
-        }
+        try { call.destroy(); } catch { /* noop */ }
       }
     };
   }, [appointmentId, closeToAppointments, role, roleLoading, t]);
@@ -290,7 +317,6 @@ export default function VideoCallPage() {
           </div>
         )}
 
-        {/* Doctor post-call prompt */}
         {showDoctorPrompt && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/90 px-6">
             <div className="glass-card w-full max-w-md space-y-5 p-6">
