@@ -802,6 +802,7 @@ if (existsSync(manifestPath)) {
     'android.permission.FOREGROUND_SERVICE',
     'android.permission.FOREGROUND_SERVICE_CAMERA',
     'android.permission.FOREGROUND_SERVICE_MICROPHONE',
+    'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
   ];
   for (const name of neededPerms) {
     const re = new RegExp(`android:name="${name.replace(/\./g, '\\.')}"`);
@@ -828,6 +829,10 @@ if (existsSync(manifestPath)) {
   }
   if (!/DailyCallService/.test(manifest)) {
     const svcTag = `        <service android:name="${appId}.daily.DailyCallService" android:exported="false" android:foregroundServiceType="camera|microphone" />\n`;
+    manifest = manifest.replace(/<\/application>/, `${svcTag}    </application>`);
+  }
+  if (!/DailyScreenShareService/.test(manifest)) {
+    const svcTag = `        <service android:name="${appId}.daily.DailyScreenShareService" android:exported="false" android:foregroundServiceType="mediaProjection" />\n`;
     manifest = manifest.replace(/<\/application>/, `${svcTag}    </application>`);
   }
 
