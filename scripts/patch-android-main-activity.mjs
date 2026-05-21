@@ -9,8 +9,9 @@ const mainActivityPath = join(javaDir, 'MainActivity.java');
 const manifestPath = join('android', 'app', 'src', 'main', 'AndroidManifest.xml');
 const appGradlePath = join('android', 'app', 'build.gradle');
 
-if (!existsSync(mainActivityPath)) {
-  console.log(`[cap:patch-main] Android platform not found yet (${mainActivityPath}). Skipping.`);
+const hasAndroidPlatform = existsSync(manifestPath) || existsSync(mainActivityPath) || existsSync(appGradlePath);
+if (!hasAndroidPlatform) {
+  console.log('[cap:patch-main] Android platform not found yet. Skipping.');
   process.exit(0);
 }
 
@@ -67,7 +68,11 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
 }
 `;
 
-writeIfChanged(mainActivityPath, desiredMainActivity);
+if (existsSync(mainActivityPath)) {
+  writeIfChanged(mainActivityPath, desiredMainActivity);
+} else {
+  console.log(`[cap:patch-main] MainActivity not found (${mainActivityPath}). Skipping MainActivity patch.`);
+}
 
 // ──────────────────────────────────────────────────────────────────────
 // App-level build.gradle — release signing only (Daily SDK removed)
