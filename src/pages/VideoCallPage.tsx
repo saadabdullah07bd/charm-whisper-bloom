@@ -107,6 +107,8 @@ const VideoCallPage: React.FC = () => {
         console.error('[daily] error', e);
         const message = e?.errorMsg ?? 'Daily could not connect to the call.';
         toast.error(message);
+        stopMediaStream(previewStreamRef.current);
+        previewStreamRef.current = null;
         setStatus('error');
         setErrorMsg(message);
       });
