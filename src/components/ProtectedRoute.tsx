@@ -19,6 +19,9 @@ const ProtectedRoute: React.FC<Props> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [welcomeDone, setWelcomeDoneState] = useState<boolean>(() => isWelcomeDone());
   const { role, loading: roleLoading } = useUserRole();
+  const location = useLocation();
+  const isCallRoute = location.pathname.startsWith('/call/');
+  
   
 
   useEffect(() => {
