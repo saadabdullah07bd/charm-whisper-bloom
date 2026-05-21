@@ -716,7 +716,7 @@ const PatientDashboard: React.FC = () => {
             </div>
           </nav>
 
-          <div className="p-3 space-y-1">
+          <div className="p-3 space-y-2">
             <div className="flex items-center gap-3 px-3 py-3 rounded-xl border border-border/20" style={{ background: 'hsl(var(--card)/0.5)' }}>
               <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                 {patient.avatarUrl ? (
@@ -730,6 +730,15 @@ const PatientDashboard: React.FC = () => {
                 <p className="text-[11px] text-muted-foreground truncate">{patient.age} yrs · <span className="capitalize">{patient.gender}</span></p>
               </div>
             </div>
+            <button
+              onClick={signOut}
+              className="w-full flex items-center gap-3 px-3 h-11 rounded-xl text-sm font-medium text-destructive border border-destructive/20 hover:bg-destructive/5 transition-colors"
+              style={{ fontFamily: "'Poppins', sans-serif" }}
+              aria-label={t('common.signOut')}
+            >
+              <LogOut size={16} />
+              <span>{t('common.signOut')}</span>
+            </button>
           </div>
         </aside>
 
