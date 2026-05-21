@@ -146,7 +146,7 @@ export default function VideoCallPage() {
         }
 
         // ── Native Android path: hand off to DailyCallActivity ──
-        if (canUseNativeDaily()) {
+        if (await canUseNativeDaily()) {
           if (nativeStartedRef.current) return;
           nativeStartedRef.current = true;
           setLoading(false);
