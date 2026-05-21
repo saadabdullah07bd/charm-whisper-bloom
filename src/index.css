@@ -348,7 +348,7 @@
        (edge-to-edge, set by StatusBar.setOverlaysWebView) without content
        being covered by them. position:fixed elements are viewport-relative
        and therefore unaffected — they should opt in via env(safe-area-inset-*)
-       themselves (see VideoCallPage and MobileBottomTabs). */
+       themselves (see MobileBottomTabs). */
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
@@ -393,12 +393,6 @@
     border: 1px solid hsl(var(--border) / 0.3);
   }
 
-  .video-call-page,
-  .video-call-page body,
-  .video-call-page #root {
-    height: 100%;
-    overflow: hidden;
-  }
 
   .medical-card {
     @apply glass-card;

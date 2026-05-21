@@ -44,15 +44,11 @@ const ProtectedRoute: React.FC<Props> = ({ children }) => {
     return <PatientAuthPage />;
   }
 
-  if (!welcomeDone && !location.pathname.startsWith('/call/')) {
+  if (!welcomeDone) {
     return <WelcomeOnboarding onDone={() => setWelcomeDoneState(true)} />;
   }
 
   if (role === 'patient') {
-    if (location.pathname.startsWith('/call/')) {
-      return <>{children}</>;
-    }
-
     return <PatientDashboard />;
   }
 
